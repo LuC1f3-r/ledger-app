@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Modal, Alert, Pressable
+  TextInput, Modal, Alert, Pressable
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
 import { LightColors, CAT_COLORS, CATEGORIES } from '@/theme';
 import { Entry, EntryType } from '@/lib/types';
@@ -47,7 +48,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={s.header}>
           <View>
-            <Text style={s.title}>Ledger</Text>
+            <Text style={s.title}>PaisoPulse</Text>
             <Text style={s.subtitle}>{format(new Date(), 'MMMM yyyy')}</Text>
           </View>
           <TouchableOpacity onPress={() => setModal(true)}>

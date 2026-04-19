@@ -1,13 +1,16 @@
 {
   "expo": {
-    "name": "Ledger",
+    "name": "PaisoPulse",
     "slug": "ledger-app",
     "version": "1.0.0",
     "scheme": "ledger",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/PaisoPulse-logo.png",
     "splash": {
-      "backgroundColor": "#f7f8fa"
+      "image": "./assets/PaisoPulse-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#443821"
     },
     "ios": {
       "supportsTablet": false,
@@ -15,7 +18,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0b74ff"
+        "foregroundImage": "./assets/PaisoPulse-logo.png",
+        "backgroundColor": "#443821"
       },
       "package": "com.niyaz.ledger"
     },

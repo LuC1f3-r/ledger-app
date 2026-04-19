@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView,
+  View, Text, StyleSheet, ScrollView,
   TouchableOpacity, TextInput, Modal, Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
 import { LightColors, CAT_COLORS, CATEGORIES } from '@/theme';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';

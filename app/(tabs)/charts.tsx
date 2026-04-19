@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
 import { LightColors, CAT_COLORS } from '@/theme';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';

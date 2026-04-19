@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, TextInput,
+  View, Text, StyleSheet, TextInput,
   TouchableOpacity, Alert, ScrollView, Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase, signInWithGoogle } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
