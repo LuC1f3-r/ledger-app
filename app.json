@@ -26,6 +26,12 @@
       "expo-router",
       "expo-secure-store",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "08145e43-e0d4-4a1d-9be4-7cc0ed2c17a3"
+      }
+    }
   }
 }
