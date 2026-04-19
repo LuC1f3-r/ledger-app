@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Ledger",
+    "slug": "ledger-app",
+    "version": "1.0.0",
+    "scheme": "ledger",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#f7f8fa"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.niyaz.ledger"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0b74ff"
+      },
+      "package": "com.niyaz.ledger"
+    },
+    "updates": {
+      "enabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
+  }
+}
