@@ -18,6 +18,10 @@
       }
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://elqrfoulrvhrmmyqkvzd.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVscXJmb3VscnZocm1teXFrdnpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNDA0NjYsImV4cCI6MjA5MTgxNjQ2Nn0.e4DxidoppkuOIVXtzt71JrBmRkg6RAQjERhNf96Cdro"
+      },
       "android": {
         "buildType": "app-bundle"
       }

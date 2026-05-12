@@ -1,9 +1,15 @@
 import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LightColors } from '@/theme';
 
 export default function TabLayout() {
+  const { bottom } = useSafeAreaInsets();
+
+  const paddingBottom = Platform.OS === 'ios' ? Math.max(bottom, 20) : Math.max(bottom + 8, 12);
+  const tabBarHeight  = Platform.OS === 'ios' ? Math.max(bottom + 56, 82) : Math.max(bottom + 64, 76);
+
   return (
     <Tabs
       screenOptions={{
@@ -12,10 +18,9 @@ export default function TabLayout() {
           backgroundColor: LightColors.card,
           borderTopColor: LightColors.border,
           borderTopWidth: 1,
-          // Let React Navigation auto-size; only override inner padding
           paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
-          height: Platform.OS === 'ios' ? 82 : 62,
+          paddingBottom,
+          height: tabBarHeight,
         },
         tabBarActiveTintColor:   LightColors.primary,
         tabBarInactiveTintColor: LightColors.muted,
