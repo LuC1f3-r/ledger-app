@@ -40,7 +40,9 @@
             "enableShrinkResourcesInReleaseBuilds": false
           }
         }
-      ]
+      ],
+      "sentry-expo",
+      "@sentry/react-native"
     ],
     "extra": {
       "router": {},

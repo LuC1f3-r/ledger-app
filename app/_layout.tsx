@@ -3,6 +3,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
+import ErrorBoundary from '@/lib/ErrorBoundary';
+import '@/lib/sentry';
 
 export default function RootLayout() {
   const { setUserId, setUserEmail, loadLocal, syncFromCloud } = useStore();
@@ -25,9 +27,9 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <ErrorBoundary>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }} />
-    </>
+    </ErrorBoundary>
   );
 }
