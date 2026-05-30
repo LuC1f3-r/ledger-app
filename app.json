@@ -2,7 +2,7 @@
   "expo": {
     "name": "PaisoPulse",
     "slug": "ledger-app",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "scheme": "ledger",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -22,7 +22,7 @@
         "backgroundColor": "#443821"
       },
       "package": "com.niyaz.ledger",
-      "versionCode": 2
+      "versionCode": 3
     },
     "updates": {
       "enabled": false
@@ -41,8 +41,7 @@
           }
         }
       ],
-      "sentry-expo",
-      "@sentry/react-native"
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "router": {},
