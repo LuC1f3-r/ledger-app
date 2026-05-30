@@ -2,10 +2,11 @@ import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LightColors } from '@/theme';
+import { useTheme } from '@/theme/useTheme';
 
 export default function TabLayout() {
   const { bottom } = useSafeAreaInsets();
+  const colors = useTheme();
 
   const paddingBottom = Platform.OS === 'ios' ? Math.max(bottom, 20) : Math.max(bottom + 8, 12);
   const tabBarHeight  = Platform.OS === 'ios' ? Math.max(bottom + 56, 82) : Math.max(bottom + 64, 76);
@@ -15,15 +16,15 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: LightColors.card,
-          borderTopColor: LightColors.border,
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           paddingTop: 8,
           paddingBottom,
           height: tabBarHeight,
         },
-        tabBarActiveTintColor:   LightColors.primary,
-        tabBarInactiveTintColor: LightColors.muted,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
