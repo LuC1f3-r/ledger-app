@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, TextInput, Modal, Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
-import { LightColors, CAT_COLORS, CATEGORIES } from '@/theme';
+import { CAT_COLORS, CATEGORIES } from '@/theme';
+import { useTheme, Theme } from '@/theme/useTheme';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 const CAT_ICONS: Record<string, string> = {
@@ -22,6 +23,8 @@ const expenseCategories = CATEGORIES.filter(c => !['Salary', 'Freelance'].includ
 
 export default function BudgetsScreen() {
   const { entries, budgets, setBudget, currency } = useStore();
+  const colors = useTheme();
+  const s      = useMemo(() => makeStyles(colors), [colors]);
   const [modal, setModal] = useState(false);
   const [selCat, setSelCat] = useState('Food');
   const [limitInput, setLimitInput] = useState('');
@@ -70,10 +73,10 @@ export default function BudgetsScreen() {
           const pct    = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
           const over   = limit > 0 && spent > limit;
           const barColor = over
-            ? LightColors.red
+            ? colors.red
             : pct > 75
               ? '#f59e0b'
-              : LightColors.primary;
+              : colors.primary;
 
           return (
             <View key={cat} style={s.card}>
@@ -86,7 +89,7 @@ export default function BudgetsScreen() {
                   <Text style={s.catName}>{cat}</Text>
                 </View>
                 {limit > 0
-                  ? <Text style={[s.amtText, over && { color: LightColors.red }]}>
+                  ? <Text style={[s.amtText, over && { color: colors.red }]}>
                       {shortFmt(spent)} / {shortFmt(limit)}
                     </Text>
                   : <Text style={s.noLimit}>No limit set</Text>
@@ -121,12 +124,12 @@ export default function BudgetsScreen() {
                   key={c}
                   style={[
                     s.chip,
-                    selCat === c && { borderColor: CAT_COLORS[c] ?? LightColors.primary, backgroundColor: (CAT_COLORS[c] ?? LightColors.primary) + '18' }
+                    selCat === c && { borderColor: CAT_COLORS[c] ?? colors.primary, backgroundColor: (CAT_COLORS[c] ?? colors.primary) + '18' }
                   ]}
                   onPress={() => setSelCat(c)}
                 >
                   <Text style={s.chipIcon}>{CAT_ICONS[c] ?? '📌'}</Text>
-                  <Text style={[s.chipText, selCat === c && { color: CAT_COLORS[c] ?? LightColors.primary }]}>{c}</Text>
+                  <Text style={[s.chipText, selCat === c && { color: CAT_COLORS[c] ?? colors.primary }]}>{c}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -138,7 +141,7 @@ export default function BudgetsScreen() {
               value={limitInput}
               onChangeText={setLimitInput}
               placeholder={`e.g. ${currency}5000`}
-              placeholderTextColor={LightColors.muted}
+              placeholderTextColor={colors.muted}
               keyboardType="numeric"
             />
 
@@ -158,40 +161,40 @@ export default function BudgetsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: LightColors.bg },
+const makeStyles = (colors: Theme) => StyleSheet.create({
+  safe:        { flex: 1, backgroundColor: colors.bg },
   scroll:      { padding: 20, paddingBottom: 110 },
-  title:       { fontSize: 34, fontWeight: '700', color: LightColors.text, letterSpacing: -0.5, marginBottom: 16 },
+  title:       { fontSize: 34, fontWeight: '700', color: colors.text, letterSpacing: -0.5, marginBottom: 16 },
 
-  setBtn:      { backgroundColor: LightColors.primary, borderRadius: 12, padding: 15, alignItems: 'center', marginBottom: 20 },
+  setBtn:      { backgroundColor: colors.primary, borderRadius: 12, padding: 15, alignItems: 'center', marginBottom: 20 },
   setBtnText:  { color: '#ffffff', fontWeight: '700', fontSize: 16 },
 
-  card:        { backgroundColor: LightColors.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: LightColors.border },
+  card:        { backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
   cardHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   cardLeft:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBox:     { width: 36, height: 36, borderRadius: 8, backgroundColor: LightColors.secondary, alignItems: 'center', justifyContent: 'center' },
+  iconBox:     { width: 36, height: 36, borderRadius: 8, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
   iconText:    { fontSize: 18 },
-  catName:     { fontSize: 16, fontWeight: '600', color: LightColors.text },
-  amtText:     { fontSize: 14, fontWeight: '600', color: LightColors.muted },
-  noLimit:     { fontSize: 13, color: LightColors.muted },
+  catName:     { fontSize: 16, fontWeight: '600', color: colors.text },
+  amtText:     { fontSize: 14, fontWeight: '600', color: colors.muted },
+  noLimit:     { fontSize: 13, color: colors.muted },
 
-  track:       { height: 6, backgroundColor: LightColors.secondary, borderRadius: 3, overflow: 'hidden' },
+  track:       { height: 6, backgroundColor: colors.secondary, borderRadius: 3, overflow: 'hidden' },
   fill:        { height: 6, borderRadius: 3 },
-  overText:    { fontSize: 12, color: LightColors.red, marginTop: 8, fontWeight: '500' },
+  overText:    { fontSize: 12, color: colors.red, marginTop: 8, fontWeight: '500' },
 
   // Modal
   overlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  modalCard:   { backgroundColor: LightColors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 44 },
-  modalTitle:  { fontSize: 18, fontWeight: '700', color: LightColors.text, marginBottom: 20 },
-  modalLabel:  { fontSize: 12, color: LightColors.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  modalCard:   { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 44 },
+  modalTitle:  { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 20 },
+  modalLabel:  { fontSize: 12, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
   chipScroll:  { marginBottom: 20 },
-  chip:        { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: LightColors.border, marginRight: 8, backgroundColor: LightColors.secondary },
+  chip:        { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: colors.border, marginRight: 8, backgroundColor: colors.secondary },
   chipIcon:    { fontSize: 14 },
-  chipText:    { fontSize: 13, color: LightColors.muted, fontWeight: '600' },
-  input:       { backgroundColor: LightColors.secondary, borderWidth: 1, borderColor: LightColors.border, borderRadius: 10, color: LightColors.text, fontSize: 16, padding: 14, marginBottom: 8 },
+  chipText:    { fontSize: 13, color: colors.muted, fontWeight: '600' },
+  input:       { backgroundColor: colors.secondary, borderWidth: 1, borderColor: colors.border, borderRadius: 10, color: colors.text, fontSize: 16, padding: 14, marginBottom: 8 },
   actions:     { flexDirection: 'row', gap: 10, marginTop: 16 },
-  cancelBtn:   { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: LightColors.border, alignItems: 'center' },
-  cancelText:  { color: LightColors.muted, fontWeight: '600' },
-  saveBtn:     { flex: 2, padding: 14, borderRadius: 12, backgroundColor: LightColors.primary, alignItems: 'center' },
+  cancelBtn:   { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
+  cancelText:  { color: colors.muted, fontWeight: '600' },
+  saveBtn:     { flex: 2, padding: 14, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center' },
   saveBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
 });
