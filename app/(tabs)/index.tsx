@@ -56,16 +56,27 @@ export default function HomeScreen() {
       Alert.alert('Missing info', 'Please fill in description and a valid amount.');
       return;
     }
-    const dateStr = date.toISOString().split('T')[0];
-    if (editingEntry) {
-      await updateEntry(editingEntry.id, { desc: desc.trim(), amount: +amount, date: dateStr, category, type });
-    } else {
-      await addEntry({ desc: desc.trim(), amount: +amount, date: dateStr, category, type });
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
+    try {
+      if (editingEntry) {
+        await updateEntry(editingEntry.id, { desc: desc.trim(), amount: +amount, date: dateStr, category, type });
+      } else {
+        await addEntry({ desc: desc.trim(), amount: +amount, date: dateStr, category, type });
+      }
+      setModal(false);
+      setDesc('');
+      setAmount('');
+      setEditingEntry(null);
+      setDate(new Date());
+      setType('expense');
+      setCategory('Food');
+      setShowDatePicker(false);
+    } catch (e: any) {
+      Alert.alert('Save failed', e?.message ?? 'Something went wrong. Please try again.');
     }
-    setModal(false);
-    setDesc('');
-    setAmount('');
-    setEditingEntry(null);
   };
 
   const confirmDelete = (e: Entry) => {
@@ -146,7 +157,7 @@ export default function HomeScreen() {
             </Pressable>
           ))
         }
-        {filtered.length > 0 && <Text style={s.hint}>Long-press an entry to delete</Text>}
+        {filtered.length > 0 && <Text style={s.hint}>Tap to edit · Long-press to delete</Text>}
       </ScrollView>
 
       {/* Add Modal */}
@@ -219,6 +230,9 @@ export default function HomeScreen() {
             <TouchableOpacity style={s.fieldRow} onPress={() => setShowDatePicker(v => !v)}>
               <Text style={s.fieldIcon}>📅</Text>
               <Text style={s.fieldStatic}>{format(date, 'EEEE, MMM d')}</Text>
+              {showDatePicker && Platform.OS === 'ios' && (
+                <Text style={{ fontSize: 12, color: LightColors.primary, marginLeft: 'auto' }}>Done</Text>
+              )}
             </TouchableOpacity>
             {showDatePicker && (
               <DateTimePicker
