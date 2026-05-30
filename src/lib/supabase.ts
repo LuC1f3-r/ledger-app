@@ -43,21 +43,11 @@ export async function signInWithGoogle() {
   if (error || !data.url) throw error ?? new Error('No OAuth URL returned');
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-  if (result.type !== 'success') return null; // user cancelled
+  if (result.type !== 'success') return null;
 
-  // Tokens arrive in the URL hash fragment
-  const url = new URL(result.url);
-  const params = new URLSearchParams(url.hash.slice(1));
-  const access_token  = params.get('access_token');
-  const refresh_token = params.get('refresh_token');
-
-  if (access_token && refresh_token) {
-    const { data: sessionData, error: sessionError } =
-      await supabase.auth.setSession({ access_token, refresh_token });
-    if (sessionError) throw sessionError;
-    return sessionData.session;
-  }
-  return null;
+  const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
+  if (sessionError) throw sessionError;
+  return sessionData.session;
 }
 
 /*
