@@ -31,9 +31,10 @@ export default function ChartsScreen() {
   }, [entries]);
 
   const trendData = useMemo(() => {
+    const today = new Date();
     const months: { key: string; label: string; income: number; expense: number }[] = [];
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       months.push({ key, label: format(d, 'MMM'), income: 0, expense: 0 });
     }
@@ -127,8 +128,13 @@ export default function ChartsScreen() {
 function TrendChart({ data }: {
   data: { key: string; label: string; income: number; expense: number }[]
 }) {
+  const allEmpty = data.every(m => m.income === 0 && m.expense === 0);
   const maxVal = Math.max(...data.flatMap(m => [m.income, m.expense]), 1);
   const BAR_HEIGHT = 80;
+
+  if (allEmpty) {
+    return <Text style={s.empty}>Add entries to see trends</Text>;
+  }
 
   return (
     <View>
