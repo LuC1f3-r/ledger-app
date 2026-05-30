@@ -16,7 +16,7 @@ interface StoreState {
   syncFromCloud: () => Promise<void>;
   addEntry:      (e: Omit<Entry, 'id' | 'created_at'>) => Promise<void>;
   deleteEntry:   (id: string) => Promise<void>;
-  updateEntry:   (id: string, changes: Partial<Omit<Entry, 'id' | 'created_at'>>) => Promise<void>;
+  updateEntry:   (id: string, changes: Partial<Omit<Entry, 'id' | 'created_at' | 'user_id'>>) => Promise<void>;
   setBudget:     (category: string, limit: number) => Promise<void>;
   setCurrency:   (c: string) => void;
   convertCurrency: (newCurrency: string, rate: number) => Promise<void>;
@@ -118,7 +118,8 @@ export const useStore = create<StoreState>((set, get) => ({
   updateEntry: async (id, changes) => {
     const { userId, entries } = get();
     if (userId) {
-      await supabase.from('entries').update(changes).eq('id', id);
+      const { error } = await supabase.from('entries').update(changes).eq('id', id).eq('user_id', userId);
+      if (error) throw error;
     }
     const updated = entries.map(e => e.id === id ? { ...e, ...changes } : e);
     set({ entries: updated });
