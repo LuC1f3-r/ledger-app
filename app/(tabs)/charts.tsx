@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
 import { LightColors, CAT_COLORS } from '@/theme';
-import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns';
 
 export default function ChartsScreen() {
   const { entries, currency } = useStore();
@@ -30,6 +30,22 @@ export default function ChartsScreen() {
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 6);
   }, [entries]);
 
+  const trendData = useMemo(() => {
+    const months: { key: string; label: string; income: number; expense: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      months.push({ key, label: format(d, 'MMM'), income: 0, expense: 0 });
+    }
+    entries.forEach(e => {
+      const month = months.find(m => m.key === e.date.slice(0, 7));
+      if (!month) return;
+      if (e.type === 'income') month.income += e.amount;
+      else month.expense += e.amount;
+    });
+    return months;
+  }, [entries]);
+
   const maxCat = catData[0]?.[1] || 1;
 
   const shortFmt = (n: number) => {
@@ -41,6 +57,12 @@ export default function ChartsScreen() {
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         <Text style={s.title}>Analytics</Text>
+
+        {/* 6-Month Trend */}
+        <View style={s.card}>
+          <Text style={s.cardTitle}>6-Month Trend</Text>
+          <TrendChart data={trendData} />
+        </View>
 
         {/* Spending Breakdown */}
         <View style={s.card}>
@@ -101,6 +123,51 @@ export default function ChartsScreen() {
     </SafeAreaView>
   );
 }
+
+function TrendChart({ data }: {
+  data: { key: string; label: string; income: number; expense: number }[]
+}) {
+  const maxVal = Math.max(...data.flatMap(m => [m.income, m.expense]), 1);
+  const BAR_HEIGHT = 80;
+
+  return (
+    <View>
+      <View style={tc.legend}>
+        <View style={tc.legendItem}>
+          <View style={[tc.legendDot, { backgroundColor: LightColors.green }]} />
+          <Text style={tc.legendLabel}>Income</Text>
+        </View>
+        <View style={tc.legendItem}>
+          <View style={[tc.legendDot, { backgroundColor: LightColors.red }]} />
+          <Text style={tc.legendLabel}>Expenses</Text>
+        </View>
+      </View>
+      <View style={tc.barsRow}>
+        {data.map(month => (
+          <View key={month.key} style={tc.column}>
+            <View style={[tc.barPair, { height: BAR_HEIGHT }]}>
+              <View style={[tc.bar, { height: Math.max(2, (month.income / maxVal) * BAR_HEIGHT), backgroundColor: LightColors.green }]} />
+              <View style={[tc.bar, { height: Math.max(2, (month.expense / maxVal) * BAR_HEIGHT), backgroundColor: LightColors.red }]} />
+            </View>
+            <Text style={tc.monthLabel}>{month.label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const tc = StyleSheet.create({
+  legend:     { flexDirection: 'row', gap: 16, marginBottom: 16 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot:  { width: 8, height: 8, borderRadius: 4 },
+  legendLabel:{ fontSize: 12, color: LightColors.muted, fontWeight: '500' },
+  barsRow:    { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  column:     { flex: 1, alignItems: 'center' },
+  barPair:    { flexDirection: 'row', gap: 3, alignItems: 'flex-end' },
+  bar:        { width: 10, borderRadius: 3 },
+  monthLabel: { fontSize: 11, color: LightColors.muted, marginTop: 6, fontWeight: '500' },
+});
 
 function StatTile({
   icon, iconBg, iconColor, label, value,
