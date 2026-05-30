@@ -2,11 +2,14 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
-import { LightColors, CAT_COLORS } from '@/theme';
+import { CAT_COLORS } from '@/theme';
+import { useTheme, Theme } from '@/theme/useTheme';
 import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns';
 
 export default function ChartsScreen() {
   const { entries, currency } = useStore();
+  const colors = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
 
   const fmt = (n: number) => currency + Math.abs(n).toLocaleString('en-IN');
 
@@ -76,7 +79,7 @@ export default function ChartsScreen() {
                 <View style={s.barTrack}>
                   <View style={[
                     s.barFill,
-                    { width: `${(amt / maxCat) * 100}%` as any, backgroundColor: CAT_COLORS[cat] || LightColors.primary }
+                    { width: `${(amt / maxCat) * 100}%` as any, backgroundColor: CAT_COLORS[cat] || colors.primary }
                   ]} />
                 </View>
                 <Text style={s.breakdownAmt}>{shortFmt(amt)}</Text>
@@ -91,15 +94,15 @@ export default function ChartsScreen() {
           <View style={s.grid}>
             <StatTile
               icon="↗"
-              iconBg={LightColors.red + '18'}
-              iconColor={LightColors.red}
+              iconBg={colors.red + '18'}
+              iconColor={colors.red}
               label="Expenses"
               value={fmt(monthExp)}
             />
             <StatTile
               icon="↙"
-              iconBg={LightColors.green + '22'}
-              iconColor={LightColors.green}
+              iconBg={colors.green + '22'}
+              iconColor={colors.green}
               label="Income"
               value={fmt(monthInc)}
             />
@@ -112,8 +115,8 @@ export default function ChartsScreen() {
             />
             <StatTile
               icon="#"
-              iconBg={LightColors.secondary}
-              iconColor={LightColors.muted}
+              iconBg={colors.secondary}
+              iconColor={colors.muted}
               label="Transactions"
               value={String(txCount)}
             />
@@ -128,23 +131,26 @@ export default function ChartsScreen() {
 function TrendChart({ data }: {
   data: { key: string; label: string; income: number; expense: number }[]
 }) {
+  const colors = useTheme();
+  const tc = useMemo(() => makeTrendStyles(colors), [colors]);
+
   const allEmpty = data.every(m => m.income === 0 && m.expense === 0);
   const maxVal = Math.max(...data.flatMap(m => [m.income, m.expense]), 1);
   const BAR_HEIGHT = 80;
 
   if (allEmpty) {
-    return <Text style={s.empty}>Add entries to see trends</Text>;
+    return <Text style={{ color: colors.muted, fontSize: 13, textAlign: 'center', paddingVertical: 20 }}>Add entries to see trends</Text>;
   }
 
   return (
     <View>
       <View style={tc.legend}>
         <View style={tc.legendItem}>
-          <View style={[tc.legendDot, { backgroundColor: LightColors.green }]} />
+          <View style={[tc.legendDot, { backgroundColor: colors.green }]} />
           <Text style={tc.legendLabel}>Income</Text>
         </View>
         <View style={tc.legendItem}>
-          <View style={[tc.legendDot, { backgroundColor: LightColors.red }]} />
+          <View style={[tc.legendDot, { backgroundColor: colors.red }]} />
           <Text style={tc.legendLabel}>Expenses</Text>
         </View>
       </View>
@@ -152,8 +158,8 @@ function TrendChart({ data }: {
         {data.map(month => (
           <View key={month.key} style={tc.column}>
             <View style={[tc.barPair, { height: BAR_HEIGHT }]}>
-              <View style={[tc.bar, { height: Math.max(2, (month.income / maxVal) * BAR_HEIGHT), backgroundColor: LightColors.green }]} />
-              <View style={[tc.bar, { height: Math.max(2, (month.expense / maxVal) * BAR_HEIGHT), backgroundColor: LightColors.red }]} />
+              <View style={[tc.bar, { height: Math.max(2, (month.income / maxVal) * BAR_HEIGHT), backgroundColor: colors.green }]} />
+              <View style={[tc.bar, { height: Math.max(2, (month.expense / maxVal) * BAR_HEIGHT), backgroundColor: colors.red }]} />
             </View>
             <Text style={tc.monthLabel}>{month.label}</Text>
           </View>
@@ -163,21 +169,24 @@ function TrendChart({ data }: {
   );
 }
 
-const tc = StyleSheet.create({
+const makeTrendStyles = (colors: Theme) => StyleSheet.create({
   legend:     { flexDirection: 'row', gap: 16, marginBottom: 16 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot:  { width: 8, height: 8, borderRadius: 4 },
-  legendLabel:{ fontSize: 12, color: LightColors.muted, fontWeight: '500' },
+  legendLabel:{ fontSize: 12, color: colors.muted, fontWeight: '500' },
   barsRow:    { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   column:     { flex: 1, alignItems: 'center' },
   barPair:    { flexDirection: 'row', gap: 3, alignItems: 'flex-end' },
   bar:        { width: 10, borderRadius: 3 },
-  monthLabel: { fontSize: 11, color: LightColors.muted, marginTop: 6, fontWeight: '500' },
+  monthLabel: { fontSize: 11, color: colors.muted, marginTop: 6, fontWeight: '500' },
 });
 
 function StatTile({
   icon, iconBg, iconColor, label, value,
 }: { icon: string; iconBg: string; iconColor: string; label: string; value: string }) {
+  const colors = useTheme();
+  const t = useMemo(() => makeTileStyles(colors), [colors]);
+
   return (
     <View style={t.tile}>
       <View style={[t.iconBox, { backgroundColor: iconBg }]}>
@@ -189,30 +198,30 @@ function StatTile({
   );
 }
 
-const s = StyleSheet.create({
-  safe:           { flex: 1, backgroundColor: LightColors.bg },
+const makeStyles = (colors: Theme) => StyleSheet.create({
+  safe:           { flex: 1, backgroundColor: colors.bg },
   scroll:         { padding: 20, paddingBottom: 110 },
-  title:          { fontSize: 34, fontWeight: '700', color: LightColors.text, letterSpacing: -0.5, marginBottom: 20 },
+  title:          { fontSize: 34, fontWeight: '700', color: colors.text, letterSpacing: -0.5, marginBottom: 20 },
 
-  card:           { backgroundColor: LightColors.card, borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: LightColors.border },
-  cardTitle:      { fontSize: 15, fontWeight: '700', color: LightColors.text, marginBottom: 16 },
-  empty:          { color: LightColors.muted, fontSize: 13, textAlign: 'center', paddingVertical: 20 },
+  card:           { backgroundColor: colors.card, borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: colors.border },
+  cardTitle:      { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 16 },
+  empty:          { color: colors.muted, fontSize: 13, textAlign: 'center', paddingVertical: 20 },
 
   // Breakdown
   breakdownRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  breakdownLabel: { fontSize: 14, color: LightColors.text, fontWeight: '500', width: 88 },
-  barTrack:       { flex: 1, height: 7, backgroundColor: LightColors.secondary, borderRadius: 4, overflow: 'hidden' },
+  breakdownLabel: { fontSize: 14, color: colors.text, fontWeight: '500', width: 88 },
+  barTrack:       { flex: 1, height: 7, backgroundColor: colors.secondary, borderRadius: 4, overflow: 'hidden' },
   barFill:        { height: 7, borderRadius: 4 },
-  breakdownAmt:   { fontSize: 13, fontWeight: '600', color: LightColors.text, width: 52, textAlign: 'right' },
+  breakdownAmt:   { fontSize: 13, fontWeight: '600', color: colors.text, width: 52, textAlign: 'right' },
 
   // Grid
   grid:           { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
 });
 
-const t = StyleSheet.create({
-  tile:      { flex: 1, minWidth: '44%', backgroundColor: LightColors.secondary, borderRadius: 14, padding: 16 },
+const makeTileStyles = (colors: Theme) => StyleSheet.create({
+  tile:      { flex: 1, minWidth: '44%', backgroundColor: colors.secondary, borderRadius: 14, padding: 16 },
   iconBox:   { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   iconText:  { fontSize: 16, fontWeight: '700' },
-  tileLabel: { fontSize: 12, color: LightColors.muted, fontWeight: '500', marginBottom: 4 },
-  tileValue: { fontSize: 18, fontWeight: '700', color: LightColors.text, letterSpacing: -0.3 },
+  tileLabel: { fontSize: 12, color: colors.muted, fontWeight: '500', marginBottom: 4 },
+  tileValue: { fontSize: 18, fontWeight: '700', color: colors.text, letterSpacing: -0.3 },
 });
