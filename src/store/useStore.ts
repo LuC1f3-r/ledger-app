@@ -10,6 +10,7 @@ interface StoreState {
   loading:     boolean;
   currency:    string;
   userEmail:   string | null;
+  themeMode:    'light' | 'dark' | 'system';
   setUserId:     (id: string | null) => void;
   setUserEmail:  (email: string | null) => void;
   loadLocal:     () => Promise<void>;
@@ -19,12 +20,14 @@ interface StoreState {
   updateEntry:   (id: string, changes: Partial<Omit<Entry, 'id' | 'created_at' | 'user_id'>>) => Promise<void>;
   setBudget:     (category: string, limit: number) => Promise<void>;
   setCurrency:   (c: string) => void;
+  setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
   convertCurrency: (newCurrency: string, rate: number) => Promise<void>;
 }
 
 const LOCAL_KEY    = 'ledger_entries_v2';
 const BUDGET_KEY   = 'ledger_budgets_v1';
 const CURRENCY_KEY = 'ledger_currency_v1';
+const THEME_KEY    = 'ledger_theme_v1';
 
 export const useStore = create<StoreState>((set, get) => ({
   entries:  [],
@@ -33,24 +36,32 @@ export const useStore = create<StoreState>((set, get) => ({
   loading:  false,
   currency:  '₹',
   userEmail: null,
+  themeMode: 'system' as 'light' | 'dark' | 'system',
 
   setUserId:    (id)    => set({ userId: id }),
   setUserEmail: (email) => set({ userEmail: email }),
 
   loadLocal: async () => {
-    const raw  = await AsyncStorage.getItem(LOCAL_KEY);
-    const braw = await AsyncStorage.getItem(BUDGET_KEY);
-    const curr = await AsyncStorage.getItem(CURRENCY_KEY);
+    const raw   = await AsyncStorage.getItem(LOCAL_KEY);
+    const braw  = await AsyncStorage.getItem(BUDGET_KEY);
+    const curr  = await AsyncStorage.getItem(CURRENCY_KEY);
+    const theme = await AsyncStorage.getItem(THEME_KEY);
     set({
-      entries:  raw  ? JSON.parse(raw)  : [],
-      budgets:  braw ? JSON.parse(braw) : [],
-      currency: curr ?? '₹',
+      entries:   raw  ? JSON.parse(raw)  : [],
+      budgets:   braw ? JSON.parse(braw) : [],
+      currency:  curr ?? '₹',
+      themeMode: (theme as 'light' | 'dark' | 'system' | null) ?? 'system',
     });
   },
 
   setCurrency: (c) => {
     set({ currency: c });
     AsyncStorage.setItem(CURRENCY_KEY, c);
+  },
+
+  setThemeMode: (mode) => {
+    set({ themeMode: mode });
+    AsyncStorage.setItem(THEME_KEY, mode);
   },
 
   convertCurrency: async (newCurrency, rate) => {
