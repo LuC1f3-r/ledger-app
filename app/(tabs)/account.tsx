@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
   TouchableOpacity, Alert, ScrollView, Modal,
@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase, signInWithGoogle } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
-import { LightColors } from '@/theme';
+import { useTheme, Theme } from '@/theme/useTheme';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
 
@@ -23,6 +24,8 @@ const CURRENCIES = [
 
 export default function AccountScreen() {
   const { userId, userEmail, syncFromCloud, currency, setCurrency } = useStore();
+  const colors = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
 
   // Form state
   const [email,    setEmailVal]  = useState('');
@@ -184,7 +187,7 @@ export default function AccountScreen() {
                 disabled={loading}
                 activeOpacity={0.8}
               >
-                <Text style={s.googleIcon}>G</Text>
+                <AntDesign name="google" size={20} color="#4285F4" />
                 <Text style={s.googleText}>Continue with Google</Text>
               </TouchableOpacity>
 
@@ -232,7 +235,7 @@ export default function AccountScreen() {
                   value={email}
                   onChangeText={t => { setEmailVal(t); clearError(); }}
                   placeholder="name@example.com"
-                  placeholderTextColor={LightColors.muted}
+                  placeholderTextColor={colors.muted}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   autoCorrect={false}
@@ -248,7 +251,7 @@ export default function AccountScreen() {
                     value={password}
                     onChangeText={t => { setPassword(t); clearError(); }}
                     placeholder="••••••••"
-                    placeholderTextColor={LightColors.muted}
+                    placeholderTextColor={colors.muted}
                     secureTextEntry
                   />
                   {mode === 'signin' && (
@@ -324,10 +327,17 @@ function PreferencesSection({
   selectedCurrency: typeof CURRENCIES[0];
   onCurrencyPress: () => void;
 }) {
+  const colors       = useTheme();
+  const s            = useMemo(() => makeStyles(colors), [colors]);
+  const themeMode    = useStore(state => state.themeMode);
+  const setThemeMode = useStore(state => state.setThemeMode);
+
   return (
     <>
       <Text style={s.sectionTitle}>Preferences</Text>
       <View style={s.settingsCard}>
+
+        {/* Currency row */}
         <TouchableOpacity style={s.settingRow} onPress={onCurrencyPress} activeOpacity={0.7}>
           <View style={s.settingLeft}>
             <View style={s.iconBox}>
@@ -340,6 +350,31 @@ function PreferencesSection({
             <Text style={s.chevron}>›</Text>
           </View>
         </TouchableOpacity>
+
+        {/* Theme row */}
+        <View style={[s.settingRow, { borderTopWidth: 1, borderTopColor: colors.border }]}>
+          <View style={s.settingLeft}>
+            <View style={s.iconBox}>
+              <Text style={s.iconBoxText}>◐</Text>
+            </View>
+            <Text style={s.settingLabel}>Theme</Text>
+          </View>
+          <View style={s.themeToggle}>
+            {(['light', 'system', 'dark'] as const).map(m => (
+              <TouchableOpacity
+                key={m}
+                style={[s.themeSegment, themeMode === m && s.themeSegmentActive]}
+                onPress={() => setThemeMode(m)}
+                activeOpacity={0.7}
+              >
+                <Text style={[s.themeSegmentText, themeMode === m && { color: colors.primaryFg }]}>
+                  {m === 'system' ? 'Auto' : m.charAt(0).toUpperCase() + m.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
       </View>
     </>
   );
@@ -353,6 +388,8 @@ function CurrencyModal({
   onSelect: (symbol: string) => void;
   onClose: () => void;
 }) {
+  const colors = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Modal visible={visible} transparent animationType="slide">
       <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={onClose}>
@@ -370,12 +407,12 @@ function CurrencyModal({
                 <View style={s.currLeft}>
                   <View style={[
                     s.currSymbolBox,
-                    active && { backgroundColor: LightColors.primary + '18', borderColor: LightColors.primary },
+                    active && { backgroundColor: colors.primary + '18', borderColor: colors.primary },
                   ]}>
-                    <Text style={[s.currSymbol, active && { color: LightColors.primary }]}>{c.symbol}</Text>
+                    <Text style={[s.currSymbol, active && { color: colors.primary }]}>{c.symbol}</Text>
                   </View>
                   <View>
-                    <Text style={[s.currName, active && { color: LightColors.primary }]}>{c.name}</Text>
+                    <Text style={[s.currName, active && { color: colors.primary }]}>{c.name}</Text>
                     <Text style={s.currCode}>{c.code}</Text>
                   </View>
                 </View>
@@ -390,98 +427,117 @@ function CurrencyModal({
 }
 
 // ── Styles ────────────────────────────────────────────────────────
-const s = StyleSheet.create({
-  safe:  { flex: 1, backgroundColor: LightColors.bg },
+const makeStyles = (colors: Theme) => StyleSheet.create({
+  safe:  { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: 20, paddingBottom: 110 },
-  title: { fontSize: 34, fontWeight: '700', color: LightColors.text, letterSpacing: -0.5, marginBottom: 20 },
+  title: { fontSize: 34, fontWeight: '700', color: colors.text, letterSpacing: -0.5, marginBottom: 20 },
 
   // Main card
-  card: { backgroundColor: LightColors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: LightColors.border, gap: 14, marginBottom: 24 },
+  card: { backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border, gap: 14, marginBottom: 24 },
 
   // ── Signed-in ──
   profileRow:   { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  avatar:       { width: 48, height: 48, borderRadius: 24, backgroundColor: LightColors.secondary, alignItems: 'center', justifyContent: 'center' },
-  avatarText:   { fontSize: 22, color: LightColors.muted },
+  avatar:       { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
+  avatarText:   { fontSize: 22, color: colors.muted },
   profileInfo:  { flex: 1, gap: 6 },
-  profileEmail: { fontSize: 15, fontWeight: '600', color: LightColors.text },
-  syncBadge:    { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: LightColors.secondary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, alignSelf: 'flex-start' },
-  syncDot:      { width: 8, height: 8, borderRadius: 4, backgroundColor: LightColors.green },
-  syncText:     { fontSize: 12, fontWeight: '500', color: LightColors.muted },
-  signOutBtn:   { backgroundColor: LightColors.secondary, borderRadius: 10, padding: 13, alignItems: 'center' },
-  signOutText:  { fontSize: 15, fontWeight: '600', color: LightColors.text },
+  profileEmail: { fontSize: 15, fontWeight: '600', color: colors.text },
+  syncBadge:    { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.secondary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, alignSelf: 'flex-start' },
+  syncDot:      { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.green },
+  syncText:     { fontSize: 12, fontWeight: '500', color: colors.muted },
+  signOutBtn:   { backgroundColor: colors.secondary, borderRadius: 10, padding: 13, alignItems: 'center' },
+  signOutText:  { fontSize: 15, fontWeight: '600', color: colors.text },
 
   // ── Pending verification ──
   pendingBox:   { alignItems: 'center', paddingVertical: 12, gap: 10 },
   pendingIcon:  { fontSize: 40 },
-  pendingTitle: { fontSize: 18, fontWeight: '700', color: LightColors.text },
-  pendingBody:  { fontSize: 14, color: LightColors.muted, textAlign: 'center', lineHeight: 22 },
-  pendingEmail: { fontWeight: '600', color: LightColors.text },
-  backBtn:      { backgroundColor: LightColors.secondary, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12, marginTop: 4 },
-  backBtnText:  { fontSize: 14, fontWeight: '600', color: LightColors.text },
+  pendingTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
+  pendingBody:  { fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 22 },
+  pendingEmail: { fontWeight: '600', color: colors.text },
+  backBtn:      { backgroundColor: colors.secondary, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12, marginTop: 4 },
+  backBtnText:  { fontSize: 14, fontWeight: '600', color: colors.text },
 
   // ── Google button ──
-  googleBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 10, padding: 13, borderWidth: 1, borderColor: LightColors.border },
-  googleIcon:  { fontSize: 16, fontWeight: '700', color: '#4285F4', fontFamily: 'serif' },
-  googleText:  { fontSize: 15, fontWeight: '600', color: LightColors.text },
+  googleBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 10, padding: 13, borderWidth: 1, borderColor: colors.border },
+  googleText:  { fontSize: 15, fontWeight: '600', color: colors.text },
 
   // ── Divider ──
   divider:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: LightColors.border },
-  dividerText: { fontSize: 13, color: LightColors.muted, fontWeight: '500' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { fontSize: 13, color: colors.muted, fontWeight: '500' },
 
   // ── Auth tabs ──
-  authTabs:         { flexDirection: 'row', backgroundColor: LightColors.secondary, borderRadius: 10, padding: 4 },
+  authTabs:         { flexDirection: 'row', backgroundColor: colors.secondary, borderRadius: 10, padding: 4 },
   authTab:          { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 8 },
-  authTabActive:    { backgroundColor: LightColors.card, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 2 },
-  authTabText:      { fontSize: 14, fontWeight: '600', color: LightColors.muted },
-  authTabTextActive:{ color: LightColors.text },
+  authTabActive:    { backgroundColor: colors.card, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.07, shadowRadius: 2 },
+  authTabText:      { fontSize: 14, fontWeight: '600', color: colors.muted },
+  authTabTextActive:{ color: colors.text },
 
   // ── Reset mode header ──
   resetHeader: { gap: 6 },
-  backLink:    { fontSize: 14, color: LightColors.primary, fontWeight: '500' },
-  resetTitle:  { fontSize: 17, fontWeight: '700', color: LightColors.text },
-  resetSub:    { fontSize: 13, color: LightColors.muted, lineHeight: 20 },
+  backLink:    { fontSize: 14, color: colors.primary, fontWeight: '500' },
+  resetTitle:  { fontSize: 17, fontWeight: '700', color: colors.text },
+  resetSub:    { fontSize: 13, color: colors.muted, lineHeight: 20 },
 
   // ── Form ──
   formGroup:   { gap: 6 },
-  inputLabel:  { fontSize: 14, fontWeight: '500', color: LightColors.text },
-  input:       { backgroundColor: LightColors.secondary, borderWidth: 1, borderColor: LightColors.border, borderRadius: 10, color: LightColors.text, fontSize: 15, padding: 14 },
-  inputError:  { borderColor: LightColors.red },
+  inputLabel:  { fontSize: 14, fontWeight: '500', color: colors.text },
+  input:       { backgroundColor: colors.secondary, borderWidth: 1, borderColor: colors.border, borderRadius: 10, color: colors.text, fontSize: 15, padding: 14 },
+  inputError:  { borderColor: colors.red },
   forgotLink:  { alignSelf: 'flex-end', marginTop: 6 },
-  forgotText:  { fontSize: 13, color: LightColors.primary, fontWeight: '500' },
-  errorText:   { fontSize: 13, color: LightColors.red, fontWeight: '500' },
+  forgotText:  { fontSize: 13, color: colors.primary, fontWeight: '500' },
+  errorText:   { fontSize: 13, color: colors.red, fontWeight: '500' },
 
   // ── Primary button ──
-  primaryBtn:     { backgroundColor: LightColors.primary, borderRadius: 10, padding: 14, alignItems: 'center' },
+  primaryBtn:     { backgroundColor: colors.primary, borderRadius: 10, padding: 14, alignItems: 'center' },
   primaryBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
 
   // ── Offline note ──
-  offlineNote: { flexDirection: 'row', gap: 10, backgroundColor: LightColors.secondary, borderRadius: 10, padding: 14 },
-  offlineIcon: { fontSize: 15, color: LightColors.muted, marginTop: 1 },
-  offlineText: { flex: 1, fontSize: 13, color: LightColors.muted, lineHeight: 20 },
+  offlineNote: { flexDirection: 'row', gap: 10, backgroundColor: colors.secondary, borderRadius: 10, padding: 14 },
+  offlineIcon: { fontSize: 15, color: colors.muted, marginTop: 1 },
+  offlineText: { flex: 1, fontSize: 13, color: colors.muted, lineHeight: 20 },
 
   // ── Preferences ──
-  sectionTitle:  { fontSize: 11, fontWeight: '700', color: LightColors.muted, textTransform: 'uppercase', letterSpacing: 0.8, paddingLeft: 4, marginBottom: 8 },
-  settingsCard:  { backgroundColor: LightColors.card, borderRadius: 16, borderWidth: 1, borderColor: LightColors.border, overflow: 'hidden' },
+  sectionTitle:  { fontSize: 11, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, paddingLeft: 4, marginBottom: 8 },
+  settingsCard:  { backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   settingRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
   settingLeft:   { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBox:       { width: 34, height: 34, borderRadius: 8, backgroundColor: LightColors.secondary, alignItems: 'center', justifyContent: 'center' },
-  iconBoxText:   { fontSize: 15, fontWeight: '700', color: LightColors.text },
-  settingLabel:  { fontSize: 16, fontWeight: '500', color: LightColors.text },
+  iconBox:       { width: 34, height: 34, borderRadius: 8, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
+  iconBoxText:   { fontSize: 15, fontWeight: '700', color: colors.text },
+  settingLabel:  { fontSize: 16, fontWeight: '500', color: colors.text },
   settingRight:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  settingValue:  { fontSize: 15, fontWeight: '500', color: LightColors.muted },
-  chevron:       { fontSize: 20, color: LightColors.muted },
+  settingValue:  { fontSize: 15, fontWeight: '500', color: colors.muted },
+  chevron:       { fontSize: 20, color: colors.muted },
 
   // ── Currency modal ──
   overlay:      { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  currModal:    { backgroundColor: LightColors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 44 },
-  currHandle:   { width: 36, height: 4, backgroundColor: LightColors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  currTitle:    { fontSize: 17, fontWeight: '700', color: LightColors.text, marginBottom: 16 },
-  currRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: LightColors.secondary },
+  currModal:    { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 44 },
+  currHandle:   { width: 36, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  currTitle:    { fontSize: 17, fontWeight: '700', color: colors.text, marginBottom: 16 },
+  currRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.secondary },
   currLeft:     { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  currSymbolBox:{ width: 40, height: 40, borderRadius: 10, backgroundColor: LightColors.secondary, borderWidth: 1, borderColor: LightColors.border, alignItems: 'center', justifyContent: 'center' },
-  currSymbol:   { fontSize: 18, fontWeight: '700', color: LightColors.text },
-  currName:     { fontSize: 15, fontWeight: '600', color: LightColors.text },
-  currCode:     { fontSize: 12, color: LightColors.muted, marginTop: 2 },
-  checkmark:    { fontSize: 18, color: LightColors.primary, fontWeight: '700' },
+  currSymbolBox:{ width: 40, height: 40, borderRadius: 10, backgroundColor: colors.secondary, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  currSymbol:   { fontSize: 18, fontWeight: '700', color: colors.text },
+  currName:     { fontSize: 15, fontWeight: '600', color: colors.text },
+  currCode:     { fontSize: 12, color: colors.muted, marginTop: 2 },
+  checkmark:    { fontSize: 18, color: colors.primary, fontWeight: '700' },
+
+  themeToggle: {
+    flexDirection: 'row',
+    backgroundColor: colors.secondary,
+    borderRadius: 8,
+    padding: 3,
+  },
+  themeSegment: {
+    paddingHorizontal: 10,
+    paddingVertical:   6,
+    borderRadius:      6,
+  },
+  themeSegmentActive: {
+    backgroundColor: colors.primary,
+  },
+  themeSegmentText: {
+    fontSize:   12,
+    fontWeight: '600',
+    color:      colors.muted,
+  },
 });
