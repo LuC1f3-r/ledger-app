@@ -4,8 +4,7 @@ import {
   TextInput, Modal, Alert, Pressable, Platform
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
 import { CAT_COLORS, CATEGORIES } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
@@ -177,13 +176,15 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* FAB */}
-      <TouchableOpacity
-        style={[s.fab, { bottom: tabBarHeight + 16 }]}
-        onPress={openAdd}
-        activeOpacity={0.85}
-      >
-        <Text style={s.fabText}>+</Text>
-      </TouchableOpacity>
+      {!modal && (
+        <TouchableOpacity
+          style={[s.fab, { bottom: tabBarHeight + 16 }]}
+          onPress={openAdd}
+          activeOpacity={0.85}
+        >
+          <Text style={s.fabText}>+</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Add Modal */}
       <Modal visible={modal} transparent animationType="slide">
@@ -301,8 +302,8 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
 
   // Balance card
   balanceCard:         { backgroundColor: colors.primary, borderRadius: 16, paddingVertical: 28, paddingHorizontal: 20, alignItems: 'center', marginBottom: 12 },
-  balanceLabel:        { fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: '500', marginBottom: 6 },
-  balanceValue:        { fontSize: 36, fontWeight: '700', color: '#ffffff', letterSpacing: -1 },
+  balanceLabel:        { fontSize: 14, color: colors.primaryFg + 'cc', fontWeight: '500', marginBottom: 6 },
+  balanceValue:        { fontSize: 36, fontWeight: '700', color: colors.primaryFg, letterSpacing: -1 },
 
   // Mini cards row
   miniRow:             { flexDirection: 'row', gap: 12, marginBottom: 20 },
@@ -349,19 +350,19 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   catGrid: {
     flexDirection: 'row',
     flexWrap:      'wrap',
-    gap:            8,
     marginBottom:  16,
   },
   catCell: {
-    width:           '30%',
-    alignItems:      'center',
-    justifyContent:  'center',
-    paddingVertical:  12,
-    borderRadius:    12,
-    borderWidth:      1.5,
-    borderColor:     'transparent',
-    backgroundColor:  colors.secondary,
-    minHeight:        72,
+    width:             '33.33%',
+    paddingHorizontal: 4,
+    alignItems:        'center',
+    justifyContent:    'center',
+    paddingVertical:   12,
+    borderRadius:      12,
+    borderWidth:       1.5,
+    borderColor:       'transparent',
+    backgroundColor:   colors.secondary,
+    minHeight:         72,
   },
   catEmoji: {
     fontSize:     22,
