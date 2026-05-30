@@ -1,17 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, Modal, Alert, Pressable, Platform
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
-import { LightColors, CAT_COLORS, CATEGORIES } from '@/theme';
+import { CAT_COLORS, CATEGORIES } from '@/theme';
+import { useTheme, Theme } from '@/theme/useTheme';
 import { Entry, EntryType } from '@/lib/types';
 import { format } from 'date-fns';
 
+const CAT_EMOJIS: Record<string, string> = {
+  Food:          '🍕',
+  Transport:     '🚗',
+  Shopping:      '🛍️',
+  Bills:         '💡',
+  Health:        '💊',
+  Entertainment: '🎬',
+  Salary:        '💰',
+  Freelance:     '💻',
+  Other:         '📦',
+};
+
 export default function HomeScreen() {
   const { entries, addEntry, deleteEntry, updateEntry, currency } = useStore();
+  const colors   = useTheme();
+  const s        = useMemo(() => makeStyles(colors), [colors]);
+  const { bottom } = useSafeAreaInsets();
+  const tabBarHeight = Platform.OS === 'ios' ? Math.max(bottom + 56, 82) : Math.max(bottom + 64, 76);
+
   const [filter, setFilter] = useState<'all' | 'expense' | 'income'>('all');
   const [modal, setModal] = useState(false);
   const [type, setType] = useState<EntryType>('expense');
@@ -96,9 +115,6 @@ export default function HomeScreen() {
             <Text style={s.title}>PaisoPulse</Text>
             <Text style={s.subtitle}>{format(new Date(), 'MMMM yyyy')}</Text>
           </View>
-          <TouchableOpacity onPress={openAdd}>
-            <Text style={s.addBtnText}>+ Add</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Balance card */}
@@ -110,15 +126,15 @@ export default function HomeScreen() {
         {/* Income + Spent row */}
         <View style={s.miniRow}>
           <View style={s.miniCard}>
-            <View style={[s.iconCircle, { backgroundColor: LightColors.green + '22' }]}>
-              <Text style={[s.iconArrow, { color: LightColors.green }]}>↙</Text>
+            <View style={[s.iconCircle, { backgroundColor: colors.green + '22' }]}>
+              <Text style={[s.iconArrow, { color: colors.green }]}>↙</Text>
             </View>
             <Text style={s.miniLabel}>Income</Text>
             <Text style={s.miniValue}>{fmt(totalIncome)}</Text>
           </View>
           <View style={s.miniCard}>
-            <View style={[s.iconCircle, { backgroundColor: LightColors.red + '18' }]}>
-              <Text style={[s.iconArrow, { color: LightColors.red }]}>↗</Text>
+            <View style={[s.iconCircle, { backgroundColor: colors.red + '18' }]}>
+              <Text style={[s.iconArrow, { color: colors.red }]}>↗</Text>
             </View>
             <Text style={s.miniLabel}>Spent</Text>
             <Text style={s.miniValue}>{fmt(totalExpense)}</Text>
@@ -143,15 +159,15 @@ export default function HomeScreen() {
 
         {/* Transaction list */}
         {filtered.length === 0
-          ? <Text style={s.empty}>No entries yet. Tap "+ Add" to start.</Text>
+          ? <Text style={s.empty}>No entries yet. Tap + to start.</Text>
           : filtered.map(e => (
             <Pressable key={e.id} style={s.item} onPress={() => openEdit(e)} onLongPress={() => confirmDelete(e)}>
-              <View style={[s.dot, { backgroundColor: CAT_COLORS[e.category] || LightColors.muted }]} />
+              <View style={[s.dot, { backgroundColor: CAT_COLORS[e.category] || colors.muted }]} />
               <View style={s.itemInfo}>
                 <Text style={s.itemName} numberOfLines={1}>{e.desc}</Text>
                 <Text style={s.itemMeta}>{e.category} · {e.date}</Text>
               </View>
-              <Text style={[s.itemAmt, { color: e.type === 'expense' ? LightColors.red : LightColors.green }]}>
+              <Text style={[s.itemAmt, { color: e.type === 'expense' ? colors.red : colors.green }]}>
                 {e.type === 'expense' ? '-' : '+'}{fmt(e.amount)}
               </Text>
             </Pressable>
@@ -159,6 +175,15 @@ export default function HomeScreen() {
         }
         {filtered.length > 0 && <Text style={s.hint}>Tap to edit · Long-press to delete</Text>}
       </ScrollView>
+
+      {/* FAB */}
+      <TouchableOpacity
+        style={[s.fab, { bottom: tabBarHeight + 16 }]}
+        onPress={openAdd}
+        activeOpacity={0.85}
+      >
+        <Text style={s.fabText}>+</Text>
+      </TouchableOpacity>
 
       {/* Add Modal */}
       <Modal visible={modal} transparent animationType="slide">
@@ -191,28 +216,35 @@ export default function HomeScreen() {
 
             {/* Large amount display */}
             <TextInput
-              style={[s.amountInput, { color: type === 'expense' ? LightColors.red : LightColors.green }]}
+              style={[s.amountInput, { color: type === 'expense' ? colors.red : colors.green }]}
               value={amount ? `${currency}${amount}` : ''}
               onChangeText={t => setAmount(t.replace(/[^0-9.]/g, ''))}
               placeholder={`${currency}0.00`}
-              placeholderTextColor={LightColors.muted}
+              placeholderTextColor={colors.muted}
               keyboardType="numeric"
             />
 
-            {/* Category pills */}
+            {/* Category grid */}
             <Text style={s.fieldLabel}>Category</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.catScroll}>
+            <View style={s.catGrid}>
               {CATEGORIES.map(c => (
                 <TouchableOpacity
                   key={c}
-                  style={[s.catChip, category === c && { borderColor: CAT_COLORS[c], backgroundColor: CAT_COLORS[c] + '20' }]}
+                  style={[
+                    s.catCell,
+                    category === c && {
+                      backgroundColor: colors.primary + '18',
+                      borderColor:     colors.primary,
+                    },
+                  ]}
                   onPress={() => setCategory(c)}
+                  activeOpacity={0.7}
                 >
-                  <View style={[s.catDot, { backgroundColor: CAT_COLORS[c] || LightColors.muted }]} />
-                  <Text style={[s.catChipText, category === c && { color: CAT_COLORS[c] }]}>{c}</Text>
+                  <Text style={s.catEmoji}>{CAT_EMOJIS[c]}</Text>
+                  <Text style={[s.catCellLabel, category === c && { color: colors.primary }]}>{c}</Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
 
             {/* Description */}
             <View style={s.fieldRow}>
@@ -222,7 +254,7 @@ export default function HomeScreen() {
                 value={desc}
                 onChangeText={setDesc}
                 placeholder="Description"
-                placeholderTextColor={LightColors.muted}
+                placeholderTextColor={colors.muted}
               />
             </View>
 
@@ -231,7 +263,7 @@ export default function HomeScreen() {
               <Text style={s.fieldIcon}>📅</Text>
               <Text style={s.fieldStatic}>{format(date, 'EEEE, MMM d')}</Text>
               {showDatePicker && Platform.OS === 'ios' && (
-                <Text style={{ fontSize: 12, color: LightColors.primary, marginLeft: 'auto' }}>Done</Text>
+                <Text style={{ fontSize: 12, color: colors.primary, marginLeft: 'auto' }}>Done</Text>
               )}
             </TouchableOpacity>
             {showDatePicker && (
@@ -258,72 +290,116 @@ export default function HomeScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  safe:                { flex: 1, backgroundColor: LightColors.bg },
+const makeStyles = (colors: Theme) => StyleSheet.create({
+  safe:                { flex: 1, backgroundColor: colors.bg },
   scroll:              { padding: 20, paddingBottom: 110 },
 
   // Header
   header:              { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  title:               { fontSize: 34, fontWeight: '700', color: LightColors.text, letterSpacing: -0.5 },
-  subtitle:            { fontSize: 12, color: LightColors.muted, marginTop: 2 },
-  addBtnText:          { fontSize: 17, fontWeight: '600', color: LightColors.primary, marginTop: 10 },
+  title:               { fontSize: 34, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },
+  subtitle:            { fontSize: 12, color: colors.muted, marginTop: 2 },
 
   // Balance card
-  balanceCard:         { backgroundColor: LightColors.primary, borderRadius: 16, paddingVertical: 28, paddingHorizontal: 20, alignItems: 'center', marginBottom: 12 },
+  balanceCard:         { backgroundColor: colors.primary, borderRadius: 16, paddingVertical: 28, paddingHorizontal: 20, alignItems: 'center', marginBottom: 12 },
   balanceLabel:        { fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: '500', marginBottom: 6 },
   balanceValue:        { fontSize: 36, fontWeight: '700', color: '#ffffff', letterSpacing: -1 },
 
   // Mini cards row
   miniRow:             { flexDirection: 'row', gap: 12, marginBottom: 20 },
-  miniCard:            { flex: 1, backgroundColor: LightColors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: LightColors.border },
+  miniCard:            { flex: 1, backgroundColor: colors.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
   iconCircle:          { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   iconArrow:           { fontSize: 16, fontWeight: '700' },
-  miniLabel:           { fontSize: 13, color: LightColors.muted, fontWeight: '500', marginBottom: 4 },
-  miniValue:           { fontSize: 17, fontWeight: '700', color: LightColors.text },
+  miniLabel:           { fontSize: 13, color: colors.muted, fontWeight: '500', marginBottom: 4 },
+  miniValue:           { fontSize: 17, fontWeight: '700', color: colors.text },
 
   // Filter
-  filterContainer:     { flexDirection: 'row', backgroundColor: LightColors.secondary, borderRadius: 12, padding: 4, marginBottom: 20 },
+  filterContainer:     { flexDirection: 'row', backgroundColor: colors.secondary, borderRadius: 12, padding: 4, marginBottom: 20 },
   filterTab:           { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
-  filterTabActive:     { backgroundColor: LightColors.card, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3 },
-  filterTabText:       { fontSize: 14, fontWeight: '600', color: LightColors.muted },
-  filterTabTextActive: { color: LightColors.text },
+  filterTabActive:     { backgroundColor: colors.card, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3 },
+  filterTabText:       { fontSize: 14, fontWeight: '600', color: colors.muted },
+  filterTabTextActive: { color: colors.text },
 
   // Transactions
-  item:                { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: LightColors.secondary },
+  item:                { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.secondary },
   dot:                 { width: 10, height: 10, borderRadius: 5, flexShrink: 0 },
   itemInfo:            { flex: 1 },
-  itemName:            { fontSize: 15, fontWeight: '600', color: LightColors.text },
-  itemMeta:            { fontSize: 12, color: LightColors.muted, marginTop: 3 },
+  itemName:            { fontSize: 15, fontWeight: '600', color: colors.text },
+  itemMeta:            { fontSize: 12, color: colors.muted, marginTop: 3 },
   itemAmt:             { fontSize: 15, fontWeight: '600' },
-  empty:               { textAlign: 'center', color: LightColors.muted, fontSize: 13, marginTop: 48 },
-  hint:                { textAlign: 'center', color: LightColors.border, fontSize: 11, marginTop: 20 },
+  empty:               { textAlign: 'center', color: colors.muted, fontSize: 13, marginTop: 48 },
+  hint:                { textAlign: 'center', color: colors.border, fontSize: 11, marginTop: 20 },
 
   // Modal
   overlay:             { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  modalCard:           { backgroundColor: LightColors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
+  modalCard:           { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
   modalHeader:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  modalCancel:         { fontSize: 16, color: LightColors.muted, fontWeight: '500' },
-  modalTitle:          { fontSize: 17, fontWeight: '700', color: LightColors.text },
+  modalCancel:         { fontSize: 16, color: colors.muted, fontWeight: '500' },
+  modalTitle:          { fontSize: 17, fontWeight: '700', color: colors.text },
 
-  typeContainer:       { flexDirection: 'row', backgroundColor: LightColors.secondary, borderRadius: 10, padding: 4, marginBottom: 16 },
+  typeContainer:       { flexDirection: 'row', backgroundColor: colors.secondary, borderRadius: 10, padding: 4, marginBottom: 16 },
   typeBtn:             { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 8 },
-  typeBtnActive:       { backgroundColor: LightColors.card, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2 },
-  typeBtnText:         { fontSize: 14, fontWeight: '600', color: LightColors.muted },
-  typeBtnTextActive:   { color: LightColors.text },
+  typeBtnActive:       { backgroundColor: colors.card, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2 },
+  typeBtnText:         { fontSize: 14, fontWeight: '600', color: colors.muted },
+  typeBtnTextActive:   { color: colors.text },
 
   amountInput:         { fontSize: 42, fontWeight: '700', textAlign: 'center', marginVertical: 12, letterSpacing: -1 },
 
-  fieldLabel:          { fontSize: 13, fontWeight: '600', color: LightColors.text, marginBottom: 8 },
-  catScroll:           { marginBottom: 16 },
-  catChip:             { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: LightColors.border, marginRight: 8, backgroundColor: LightColors.secondary },
-  catDot:              { width: 8, height: 8, borderRadius: 4 },
-  catChipText:         { fontSize: 13, color: LightColors.muted, fontWeight: '600' },
+  fieldLabel:          { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 8 },
 
-  fieldRow:            { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: LightColors.secondary, borderRadius: 10, padding: 14, marginBottom: 10 },
-  fieldIcon:           { fontSize: 16, color: LightColors.muted },
-  fieldInput:          { flex: 1, fontSize: 15, color: LightColors.text },
-  fieldStatic:         { flex: 1, fontSize: 15, color: LightColors.muted },
+  catGrid: {
+    flexDirection: 'row',
+    flexWrap:      'wrap',
+    gap:            8,
+    marginBottom:  16,
+  },
+  catCell: {
+    width:           '30%',
+    alignItems:      'center',
+    justifyContent:  'center',
+    paddingVertical:  12,
+    borderRadius:    12,
+    borderWidth:      1.5,
+    borderColor:     'transparent',
+    backgroundColor:  colors.secondary,
+    minHeight:        72,
+  },
+  catEmoji: {
+    fontSize:     22,
+    marginBottom:  4,
+  },
+  catCellLabel: {
+    fontSize:    10,
+    fontWeight:  '600',
+    color:        colors.muted,
+    textAlign:   'center',
+  },
+  fab: {
+    position:        'absolute',
+    right:            20,
+    width:            56,
+    height:           56,
+    borderRadius:     28,
+    backgroundColor:  colors.primary,
+    alignItems:      'center',
+    justifyContent:  'center',
+    elevation:        6,
+    shadowColor:     '#000',
+    shadowOffset:    { width: 0, height: 3 },
+    shadowOpacity:    0.2,
+    shadowRadius:     6,
+  },
+  fabText: {
+    fontSize:    28,
+    color:       '#fff',
+    lineHeight:   30,
+    marginTop:   -2,
+  },
 
-  saveBtn:             { backgroundColor: LightColors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8 },
+  fieldRow:            { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.secondary, borderRadius: 10, padding: 14, marginBottom: 10 },
+  fieldIcon:           { fontSize: 16, color: colors.muted },
+  fieldInput:          { flex: 1, fontSize: 15, color: colors.text },
+  fieldStatic:         { flex: 1, fontSize: 15, color: colors.muted },
+
+  saveBtn:             { backgroundColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8 },
   saveBtnText:         { color: '#ffffff', fontWeight: '700', fontSize: 16 },
 });
