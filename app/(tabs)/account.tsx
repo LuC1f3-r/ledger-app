@@ -352,7 +352,7 @@ function PreferencesSection({
         </TouchableOpacity>
 
         {/* Theme row */}
-        <View style={[s.settingRow, { borderTopWidth: 1, borderTopColor: colors.border }]}>
+        <View style={s.settingRowBordered}>
           <View style={s.settingLeft}>
             <View style={s.iconBox}>
               <Text style={s.iconBoxText}>◐</Text>
@@ -457,7 +457,7 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   backBtnText:  { fontSize: 14, fontWeight: '600', color: colors.text },
 
   // ── Google button ──
-  googleBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 10, padding: 13, borderWidth: 1, borderColor: colors.border },
+  googleBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: colors.card, borderRadius: 10, padding: 13, borderWidth: 1, borderColor: colors.border },
   googleText:  { fontSize: 15, fontWeight: '600', color: colors.text },
 
   // ── Divider ──
@@ -489,7 +489,7 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
 
   // ── Primary button ──
   primaryBtn:     { backgroundColor: colors.primary, borderRadius: 10, padding: 14, alignItems: 'center' },
-  primaryBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
+  primaryBtnText: { color: colors.primaryFg, fontWeight: '700', fontSize: 16 },
 
   // ── Offline note ──
   offlineNote: { flexDirection: 'row', gap: 10, backgroundColor: colors.secondary, borderRadius: 10, padding: 14 },
@@ -500,6 +500,14 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   sectionTitle:  { fontSize: 11, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, paddingLeft: 4, marginBottom: 8 },
   settingsCard:  { backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   settingRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
+  settingRowBordered: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
   settingLeft:   { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconBox:       { width: 34, height: 34, borderRadius: 8, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
   iconBoxText:   { fontSize: 15, fontWeight: '700', color: colors.text },
