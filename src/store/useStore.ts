@@ -95,11 +95,12 @@ export const useStore = create<StoreState>((set, get) => ({
     const { userId } = get();
     const newEntry: Entry = { ...entry, id: Date.now().toString() };
     if (userId) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('entries')
         .insert({ ...entry, user_id: userId })
         .select()
         .single();
+      if (error) throw error;
       if (data) newEntry.id = data.id;
     }
     const entries = [newEntry, ...get().entries];
@@ -109,7 +110,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
   deleteEntry: async (id) => {
     const { userId } = get();
-    if (userId) await supabase.from('entries').delete().eq('id', id);
+    if (userId) await supabase.from('entries').delete().eq('id', id).eq('user_id', userId);
     const entries = get().entries.filter(e => e.id !== id);
     set({ entries });
     await AsyncStorage.setItem(LOCAL_KEY, JSON.stringify(entries));
@@ -122,8 +123,9 @@ export const useStore = create<StoreState>((set, get) => ({
       if (error) throw error;
     }
     const updated = entries.map(e => e.id === id ? { ...e, ...changes } : e);
-    set({ entries: updated });
-    await AsyncStorage.setItem(LOCAL_KEY, JSON.stringify(updated));
+    const sorted = updated.sort((a, b) => b.date.localeCompare(a.date));
+    set({ entries: sorted });
+    await AsyncStorage.setItem(LOCAL_KEY, JSON.stringify(sorted));
   },
 
   setBudget: async (category, limit) => {
