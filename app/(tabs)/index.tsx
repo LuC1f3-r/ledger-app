@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Modal, Alert, Pressable
+  TextInput, Modal, Alert, Pressable, Platform
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
 import { LightColors, CAT_COLORS, CATEGORIES } from '@/theme';
@@ -10,13 +11,38 @@ import { Entry, EntryType } from '@/lib/types';
 import { format } from 'date-fns';
 
 export default function HomeScreen() {
-  const { entries, addEntry, deleteEntry, currency } = useStore();
+  const { entries, addEntry, deleteEntry, updateEntry, currency } = useStore();
   const [filter, setFilter] = useState<'all' | 'expense' | 'income'>('all');
   const [modal, setModal] = useState(false);
   const [type, setType] = useState<EntryType>('expense');
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const openAdd = () => {
+    setEditingEntry(null);
+    setType('expense');
+    setDesc('');
+    setAmount('');
+    setCategory('Food');
+    setDate(new Date());
+    setShowDatePicker(false);
+    setModal(true);
+  };
+
+  const openEdit = (entry: Entry) => {
+    setEditingEntry(entry);
+    setType(entry.type);
+    setDesc(entry.desc);
+    setAmount(String(entry.amount));
+    setCategory(entry.category);
+    setDate(new Date(entry.date + 'T00:00:00'));
+    setShowDatePicker(false);
+    setModal(true);
+  };
 
   const fmt = (n: number) => currency + Math.abs(n).toLocaleString('en-IN');
 
@@ -30,8 +56,16 @@ export default function HomeScreen() {
       Alert.alert('Missing info', 'Please fill in description and a valid amount.');
       return;
     }
-    await addEntry({ desc: desc.trim(), amount: +amount, date: new Date().toISOString().split('T')[0], category, type });
-    setModal(false); setDesc(''); setAmount('');
+    const dateStr = date.toISOString().split('T')[0];
+    if (editingEntry) {
+      await updateEntry(editingEntry.id, { desc: desc.trim(), amount: +amount, date: dateStr, category, type });
+    } else {
+      await addEntry({ desc: desc.trim(), amount: +amount, date: dateStr, category, type });
+    }
+    setModal(false);
+    setDesc('');
+    setAmount('');
+    setEditingEntry(null);
   };
 
   const confirmDelete = (e: Entry) => {
@@ -51,7 +85,7 @@ export default function HomeScreen() {
             <Text style={s.title}>PaisoPulse</Text>
             <Text style={s.subtitle}>{format(new Date(), 'MMMM yyyy')}</Text>
           </View>
-          <TouchableOpacity onPress={() => setModal(true)}>
+          <TouchableOpacity onPress={openAdd}>
             <Text style={s.addBtnText}>+ Add</Text>
           </TouchableOpacity>
         </View>
@@ -100,7 +134,7 @@ export default function HomeScreen() {
         {filtered.length === 0
           ? <Text style={s.empty}>No entries yet. Tap "+ Add" to start.</Text>
           : filtered.map(e => (
-            <Pressable key={e.id} style={s.item} onLongPress={() => confirmDelete(e)}>
+            <Pressable key={e.id} style={s.item} onPress={() => openEdit(e)} onLongPress={() => confirmDelete(e)}>
               <View style={[s.dot, { backgroundColor: CAT_COLORS[e.category] || LightColors.muted }]} />
               <View style={s.itemInfo}>
                 <Text style={s.itemName} numberOfLines={1}>{e.desc}</Text>
@@ -121,10 +155,10 @@ export default function HomeScreen() {
           <View style={s.modalCard}>
             {/* Modal header */}
             <View style={s.modalHeader}>
-              <TouchableOpacity onPress={() => setModal(false)}>
+              <TouchableOpacity onPress={() => { setModal(false); setEditingEntry(null); setShowDatePicker(false); }}>
                 <Text style={s.modalCancel}>Cancel</Text>
               </TouchableOpacity>
-              <Text style={s.modalTitle}>Add Entry</Text>
+              <Text style={s.modalTitle}>{editingEntry ? 'Edit Entry' : 'Add Entry'}</Text>
               <View style={{ width: 50 }} />
             </View>
 
@@ -182,16 +216,26 @@ export default function HomeScreen() {
             </View>
 
             {/* Date */}
-            <View style={s.fieldRow}>
+            <TouchableOpacity style={s.fieldRow} onPress={() => setShowDatePicker(v => !v)}>
               <Text style={s.fieldIcon}>📅</Text>
-              <Text style={s.fieldStatic}>
-                {format(new Date(), 'EEEE, MMM d')}
-              </Text>
-            </View>
+              <Text style={s.fieldStatic}>{format(date, 'EEEE, MMM d')}</Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                maximumDate={new Date()}
+                onChange={(_, selected) => {
+                  setShowDatePicker(Platform.OS === 'ios');
+                  if (selected) setDate(selected);
+                }}
+              />
+            )}
 
             {/* Save button */}
             <TouchableOpacity style={s.saveBtn} onPress={save}>
-              <Text style={s.saveBtnText}>Save Entry</Text>
+              <Text style={s.saveBtnText}>{editingEntry ? 'Save Changes' : 'Save Entry'}</Text>
             </TouchableOpacity>
           </View>
         </View>
