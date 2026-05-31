@@ -22,7 +22,7 @@
         "backgroundColor": "#443821"
       },
       "package": "com.niyaz.ledger",
-      "versionCode": 4
+      "versionCode": 5
     },
     "updates": {
       "enabled": false
