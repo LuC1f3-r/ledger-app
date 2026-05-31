@@ -106,7 +106,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: tabBarHeight + 80 }]} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
         <View style={s.header}>
@@ -293,7 +293,7 @@ export default function HomeScreen() {
 
 const makeStyles = (colors: Theme) => StyleSheet.create({
   safe:                { flex: 1, backgroundColor: colors.bg },
-  scroll:              { padding: 20, paddingBottom: 110 },
+  scroll:              { padding: 20 },
 
   // Header
   header:              { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
@@ -328,7 +328,7 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   itemMeta:            { fontSize: 12, color: colors.muted, marginTop: 3 },
   itemAmt:             { fontSize: 15, fontWeight: '600' },
   empty:               { textAlign: 'center', color: colors.muted, fontSize: 13, marginTop: 48 },
-  hint:                { textAlign: 'center', color: colors.border, fontSize: 11, marginTop: 20 },
+  hint:                { textAlign: 'center', color: colors.muted, fontSize: 11, marginTop: 20 },
 
   // Modal
   overlay:             { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
@@ -350,6 +350,7 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   catGrid: {
     flexDirection: 'row',
     flexWrap:      'wrap',
+    rowGap:        8,
     marginBottom:  16,
   },
   catCell: {

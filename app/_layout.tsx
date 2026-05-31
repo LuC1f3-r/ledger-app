@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useColorScheme } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from '@/lib/supabase';
@@ -7,6 +8,10 @@ import ErrorBoundary from '@/lib/ErrorBoundary';
 
 export default function RootLayout() {
   const { setUserId, setUserEmail, loadLocal, syncFromCloud } = useStore();
+  const themeMode = useStore(s => s.themeMode);
+  const systemScheme = useColorScheme();
+  const activeScheme = themeMode === 'system' ? systemScheme : themeMode;
+  const statusBarStyle = activeScheme === 'dark' ? 'light' : 'dark';
 
   useEffect(() => {
     loadLocal();
@@ -27,7 +32,7 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <StatusBar style="dark" />
+      <StatusBar style={statusBarStyle} />
       <Stack screenOptions={{ headerShown: false }} />
     </ErrorBoundary>
   );
