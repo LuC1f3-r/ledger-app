@@ -21,7 +21,7 @@
         "foregroundImage": "./assets/PaisoPulse-logo.png",
         "backgroundColor": "#443821"
       },
-      "package": "com.knvf.paisopulse",
+      "package": "com.niyaz.ledger",
       "versionCode": 4
     },
     "updates": {

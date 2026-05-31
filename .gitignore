@@ -26,3 +26,8 @@ docs/superpowers/
 docs/plans/
 
 ruvector.db
+
+# Android signing credentials — never commit
+credentials.json
+*.jks
+*.keystore
