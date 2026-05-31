@@ -20,20 +20,38 @@ export const Colors = {
 };
 
 export const CAT_COLORS: Record<string, string> = {
-  'Food':          '#e85d26',
-  'Transport':     '#6ca0e8',
-  'Shopping':      '#a88be0',
-  'Bills':         '#f06060',
-  'Health':        '#3ecf8e',
-  'Entertainment': '#c8a96e',
-  'Salary':        '#3ecf8e',
-  'Freelance':     '#6ca0e8',
-  'Other':         '#7a7a8a',
+  'Groceries':      '#e85d26',
+  'Restaurants':    '#f59e0b',
+  'Education':      '#6ca0e8',
+  'Pets':           '#a88be0',
+  'Sports':         '#3ecf8e',
+  'Bills':          '#f06060',
+  'Public transit': '#6ca0e8',
+  'Gifts':          '#c8a96e',
+  'Vacation':       '#f472b6',
+  'Maintenance':    '#7a7a8a',
+  'Health':         '#3ecf8e',
+  'Entertainment':  '#c8a96e',
+  'Shopping':       '#a88be0',
+  'Other':          '#7a7a8a',
+  'Salary':         '#3ecf8e',
+  'Freelance':      '#6ca0e8',
 };
 
 export const CATEGORIES = [
-  'Food', 'Transport', 'Shopping', 'Bills',
-  'Health', 'Entertainment', 'Salary', 'Freelance', 'Other',
+  'Groceries', 'Restaurants', 'Education', 'Pets', 'Sports', 'Bills',
+  'Public transit', 'Gifts', 'Vacation', 'Maintenance', 'Health',
+  'Entertainment', 'Shopping', 'Other', 'Salary', 'Freelance',
+];
+
+export const EXPENSE_CATEGORIES = [
+  'Groceries', 'Restaurants', 'Education', 'Pets', 'Sports', 'Bills',
+  'Public transit', 'Gifts', 'Vacation', 'Maintenance', 'Health',
+  'Entertainment', 'Shopping', 'Other',
+];
+
+export const INCOME_CATEGORIES = [
+  'Salary', 'Freelance', 'Gifts', 'Other',
 ];
 
 export const LightColors = {

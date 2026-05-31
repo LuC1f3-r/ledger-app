@@ -1,26 +1,33 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Modal, Alert, Pressable, Platform
+  TextInput, Modal, Alert, Pressable, Platform, BackHandler
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
-import { CAT_COLORS, CATEGORIES } from '@/theme';
+import { CAT_COLORS, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
 import { Entry, EntryType } from '@/lib/types';
 import { format } from 'date-fns';
 
 const CAT_EMOJIS: Record<string, string> = {
-  Food:          '🍕',
-  Transport:     '🚗',
-  Shopping:      '🛍️',
-  Bills:         '💡',
-  Health:        '💊',
-  Entertainment: '🎬',
-  Salary:        '💰',
-  Freelance:     '💻',
-  Other:         '📦',
+  Groceries:        '🛒',
+  Restaurants:      '🍽️',
+  Education:        '🎓',
+  Pets:             '🐾',
+  Sports:           '🚴',
+  Bills:            '📄',
+  'Public transit': '🚌',
+  Gifts:            '🎁',
+  Vacation:         '🏖️',
+  Maintenance:      '🔧',
+  Health:           '💊',
+  Entertainment:    '🎬',
+  Shopping:         '🛍️',
+  Other:            '❓',
+  Salary:           '💰',
+  Freelance:        '💻',
 };
 
 export default function HomeScreen() {
@@ -35,17 +42,34 @@ export default function HomeScreen() {
   const [type, setType] = useState<EntryType>('expense');
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('Food');
+  const [category, setCategory] = useState('Groceries');
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Close modal on Android back button
+  useEffect(() => {
+    if (!modal) return;
+    const onBack = () => { closeModal(); return true; };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, [modal]);
+
+  const closeModal = () => {
+    setModal(false);
+    setEditingEntry(null);
+    setShowDatePicker(false);
+  };
+
+  // Filter categories based on type
+  const visibleCategories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
   const openAdd = () => {
     setEditingEntry(null);
     setType('expense');
     setDesc('');
     setAmount('');
-    setCategory('Food');
+    setCategory('Groceries');
     setDate(new Date());
     setShowDatePicker(false);
     setModal(true);
@@ -90,7 +114,7 @@ export default function HomeScreen() {
       setEditingEntry(null);
       setDate(new Date());
       setType('expense');
-      setCategory('Food');
+      setCategory('Groceries');
       setShowDatePicker(false);
     } catch (e: any) {
       Alert.alert('Save failed', e?.message ?? 'Something went wrong. Please try again.');
@@ -178,7 +202,7 @@ export default function HomeScreen() {
       {/* FAB */}
       {!modal && (
         <TouchableOpacity
-          style={[s.fab, { bottom: tabBarHeight + 16 }]}
+          style={[s.fab, { bottom: tabBarHeight - 65 }]}
           onPress={openAdd}
           activeOpacity={0.85}
         >
@@ -187,23 +211,25 @@ export default function HomeScreen() {
       )}
 
       {/* Add Modal */}
-      <Modal visible={modal} transparent animationType="slide">
+      <Modal visible={modal} transparent animationType="slide" onRequestClose={closeModal}>
         <View style={s.overlay}>
+          <Pressable style={s.overlayBackdrop} onPress={closeModal} />
           <View style={s.modalCard}>
             {/* Modal header */}
             <View style={s.modalHeader}>
-              <TouchableOpacity onPress={() => { setModal(false); setEditingEntry(null); setShowDatePicker(false); }}>
+              <TouchableOpacity onPress={closeModal}>
                 <Text style={s.modalCancel}>Cancel</Text>
               </TouchableOpacity>
               <Text style={s.modalTitle}>{editingEntry ? 'Edit Entry' : 'Add Entry'}</Text>
               <View style={{ width: 50 }} />
             </View>
 
+            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
             {/* Expense / Income toggle */}
             <View style={s.typeContainer}>
               <TouchableOpacity
                 style={[s.typeBtn, type === 'expense' && s.typeBtnActive]}
-                onPress={() => { setType('expense'); setCategory('Food'); }}
+                onPress={() => { setType('expense'); setCategory('Groceries'); }}
               >
                 <Text style={[s.typeBtnText, type === 'expense' && s.typeBtnTextActive]}>Expense</Text>
               </TouchableOpacity>
@@ -228,7 +254,7 @@ export default function HomeScreen() {
             {/* Category grid */}
             <Text style={s.fieldLabel}>Category</Text>
             <View style={s.catGrid}>
-              {CATEGORIES.map(c => (
+              {visibleCategories.map(c => (
                 <TouchableOpacity
                   key={c}
                   style={[
@@ -284,6 +310,7 @@ export default function HomeScreen() {
             <TouchableOpacity style={s.saveBtn} onPress={save}>
               <Text style={s.saveBtnText}>{editingEntry ? 'Save Changes' : 'Save Entry'}</Text>
             </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -331,8 +358,9 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   hint:                { textAlign: 'center', color: colors.muted, fontSize: 11, marginTop: 20 },
 
   // Modal
-  overlay:             { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  modalCard:           { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
+  overlay:             { flex: 1, justifyContent: 'flex-end' },
+  overlayBackdrop:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+  modalCard:           { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, maxHeight: '85%' },
   modalHeader:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   modalCancel:         { fontSize: 16, color: colors.muted, fontWeight: '500' },
   modalTitle:          { fontSize: 17, fontWeight: '700', color: colors.text },
@@ -350,12 +378,11 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   catGrid: {
     flexDirection: 'row',
     flexWrap:      'wrap',
-    rowGap:        8,
+    gap:           8,
     marginBottom:  16,
   },
   catCell: {
-    width:             '33.33%',
-    paddingHorizontal: 4,
+    width:             '31%',
     alignItems:        'center',
     justifyContent:    'center',
     paddingVertical:   12,

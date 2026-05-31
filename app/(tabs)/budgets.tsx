@@ -5,21 +5,27 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
-import { CAT_COLORS, CATEGORIES } from '@/theme';
+import { CAT_COLORS, EXPENSE_CATEGORIES } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 const CAT_ICONS: Record<string, string> = {
-  Food:          '🛒',
-  Transport:     '🚗',
-  Shopping:      '🛍️',
-  Bills:         '⚡',
-  Health:        '💊',
-  Entertainment: '🎬',
-  Other:         '📌',
+  Groceries:        '🛒',
+  Restaurants:      '🍽️',
+  Education:        '🎓',
+  Pets:             '🐾',
+  Sports:           '🚴',
+  Bills:            '⚡',
+  'Public transit': '🚌',
+  Gifts:            '🎁',
+  Vacation:         '🏖️',
+  Maintenance:      '🔧',
+  Health:           '💊',
+  Entertainment:    '🎬',
+  Shopping:         '🛍️',
+  Other:            '📌',
 };
 
-const expenseCategories = CATEGORIES.filter(c => !['Salary', 'Freelance'].includes(c));
 
 export default function BudgetsScreen() {
   const { entries, budgets, setBudget, currency } = useStore();
@@ -66,7 +72,7 @@ export default function BudgetsScreen() {
         </TouchableOpacity>
 
         {/* Budget cards */}
-        {expenseCategories.map(cat => {
+        {EXPENSE_CATEGORIES.map(cat => {
           const spent  = categorySpend[cat] || 0;
           const budget = budgets.find(b => b.category === cat);
           const limit  = budget?.limit ?? 0;
@@ -119,7 +125,7 @@ export default function BudgetsScreen() {
             {/* Category picker */}
             <Text style={s.modalLabel}>Category</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipScroll}>
-              {expenseCategories.map(c => (
+              {EXPENSE_CATEGORIES.map(c => (
                 <TouchableOpacity
                   key={c}
                   style={[

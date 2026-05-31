@@ -20,3 +20,9 @@ Thumbs.db
 
 # Claude Code
 .superpowers/
+.swarm/
+docs/superpowers/
+.claude/
+docs/plans/
+
+ruvector.db
