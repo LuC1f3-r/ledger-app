@@ -2,7 +2,7 @@
   "expo": {
     "name": "PaisoPulse",
     "slug": "ledger-app",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "scheme": "ledger",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -14,15 +14,15 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.niyaz.ledger"
+      "bundleIdentifier": "com.knvf.paisopulse"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/PaisoPulse-logo.png",
         "backgroundColor": "#443821"
       },
-      "package": "com.niyaz.ledger",
-      "versionCode": 3
+      "package": "com.knvf.paisopulse",
+      "versionCode": 4
     },
     "updates": {
       "enabled": false
