@@ -34,7 +34,7 @@ export const useStore = create<StoreState>((set, get) => ({
   budgets:  [],
   userId:   null,
   loading:  false,
-  currency:  '₹',
+  currency:  '$',
   userEmail: null,
   themeMode: 'system' as 'light' | 'dark' | 'system',
 
@@ -49,7 +49,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({
       entries:   raw  ? JSON.parse(raw)  : [],
       budgets:   braw ? JSON.parse(braw) : [],
-      currency:  curr ?? '₹',
+      currency:  curr ?? '$',
       themeMode: (theme as 'light' | 'dark' | 'system' | null) ?? 'system',
     });
   },

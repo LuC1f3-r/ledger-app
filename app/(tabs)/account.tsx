@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
-  TouchableOpacity, Alert, ScrollView, Modal,
+  TouchableOpacity, Alert, ScrollView, Modal, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeRedirectUri } from 'expo-auth-session';
@@ -9,6 +9,7 @@ import { supabase, signInWithGoogle } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
 import { useTheme, Theme } from '@/theme/useTheme';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { getExchangeRates, conversionRate } from '@/lib/exchangeRates';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
 
@@ -23,7 +24,7 @@ const CURRENCIES = [
 ];
 
 export default function AccountScreen() {
-  const { userId, userEmail, syncFromCloud, currency, setCurrency } = useStore();
+  const { userId, userEmail, syncFromCloud, currency, setCurrency, convertCurrency } = useStore();
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
@@ -36,8 +37,25 @@ export default function AccountScreen() {
   const [pendingVerification, setPendingVerification] = useState(false);
 
   // Currency modal
-  const [currModal, setCurrModal] = useState(false);
+  const [currModal,    setCurrModal]    = useState(false);
+  const [converting,   setConverting]   = useState(false);
   const selectedCurrency = CURRENCIES.find(c => c.symbol === currency) ?? CURRENCIES[0];
+
+  const handleCurrencySelect = async (sym: string) => {
+    if (sym === currency) { setCurrModal(false); return; }
+    setConverting(true);
+    try {
+      const rates = await getExchangeRates();
+      const rate  = conversionRate(rates, currency, sym);
+      await convertCurrency(sym, rate);
+    } catch {
+      Alert.alert('Conversion failed', 'Could not fetch live exchange rates. Check your connection and try again.');
+      setCurrency(sym); // fall back to symbol-only change
+    } finally {
+      setConverting(false);
+      setCurrModal(false);
+    }
+  };
 
   // ── Validation ──────────────────────────────────────────────────
   const validate = (): boolean => {
@@ -142,7 +160,8 @@ export default function AccountScreen() {
         <CurrencyModal
           visible={currModal}
           currency={currency}
-          onSelect={(sym) => { setCurrency(sym); setCurrModal(false); }}
+          onSelect={handleCurrencySelect}
+          converting={converting}
           onClose={() => setCurrModal(false)}
         />
       </SafeAreaView>
@@ -180,7 +199,8 @@ export default function AccountScreen() {
       <CurrencyModal
         visible={currModal}
         currency={currency}
-        onSelect={(sym) => { setCurrency(sym); setCurrModal(false); }}
+        onSelect={handleCurrencySelect}
+        converting={converting}
         onClose={() => setCurrModal(false)}
       />
     </SafeAreaView>
@@ -250,45 +270,53 @@ function PreferencesSection({
 }
 
 function CurrencyModal({
-  visible, currency, onSelect, onClose,
+  visible, currency, onSelect, onClose, converting,
 }: {
   visible: boolean;
   currency: string;
   onSelect: (symbol: string) => void;
   onClose: () => void;
+  converting: boolean;
 }) {
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={onClose}>
+      <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={converting ? undefined : onClose}>
         <View style={s.currModal}>
           <View style={s.currHandle} />
           <Text style={s.currTitle}>Select Currency</Text>
-          {CURRENCIES.map(c => {
-            const active = c.symbol === currency;
-            return (
-              <TouchableOpacity
-                key={c.code}
-                style={s.currRow}
-                onPress={() => onSelect(c.symbol)}
-              >
-                <View style={s.currLeft}>
-                  <View style={[
-                    s.currSymbolBox,
-                    active && { backgroundColor: colors.primary + '18', borderColor: colors.primary },
-                  ]}>
-                    <Text style={[s.currSymbol, active && { color: colors.primary }]}>{c.symbol}</Text>
+          {converting ? (
+            <View style={s.convertingBox}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={s.convertingText}>Converting amounts…</Text>
+            </View>
+          ) : (
+            CURRENCIES.map(c => {
+              const active = c.symbol === currency;
+              return (
+                <TouchableOpacity
+                  key={c.code}
+                  style={s.currRow}
+                  onPress={() => onSelect(c.symbol)}
+                >
+                  <View style={s.currLeft}>
+                    <View style={[
+                      s.currSymbolBox,
+                      active && { backgroundColor: colors.primary + '18', borderColor: colors.primary },
+                    ]}>
+                      <Text style={[s.currSymbol, active && { color: colors.primary }]}>{c.symbol}</Text>
+                    </View>
+                    <View>
+                      <Text style={[s.currName, active && { color: colors.primary }]}>{c.name}</Text>
+                      <Text style={s.currCode}>{c.code}</Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={[s.currName, active && { color: colors.primary }]}>{c.name}</Text>
-                    <Text style={s.currCode}>{c.code}</Text>
-                  </View>
-                </View>
-                {active && <Text style={s.checkmark}>✓</Text>}
-              </TouchableOpacity>
-            );
-          })}
+                  {active && <Text style={s.checkmark}>✓</Text>}
+                </TouchableOpacity>
+              );
+            })
+          )}
         </View>
       </TouchableOpacity>
     </Modal>
@@ -397,6 +425,9 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   currName:     { fontSize: 15, fontWeight: '600', color: colors.text },
   currCode:     { fontSize: 12, color: colors.muted, marginTop: 2 },
   checkmark:    { fontSize: 18, color: colors.primary, fontWeight: '700' },
+
+  convertingBox:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 28 },
+  convertingText: { fontSize: 15, color: colors.muted, fontWeight: '500' },
 
   themeToggle: {
     flexDirection: 'row',

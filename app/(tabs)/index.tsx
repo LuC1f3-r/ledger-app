@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Modal, Alert, Pressable, Platform, BackHandler
+  TextInput, Modal, Alert, Pressable, Platform, BackHandler,
+  KeyboardAvoidingView,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,7 +87,8 @@ export default function HomeScreen() {
     setModal(true);
   };
 
-  const fmt = (n: number) => currency + Math.abs(n).toLocaleString('en-IN');
+  const locale = currency === '₹' ? 'en-IN' : 'en-US';
+  const fmt = (n: number) => currency + Math.abs(n).toLocaleString(locale);
 
   const totalIncome  = entries.filter(e => e.type === 'income' ).reduce((s, e) => s + e.amount, 0);
   const totalExpense = entries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0);
@@ -212,6 +214,10 @@ export default function HomeScreen() {
 
       {/* Add Modal */}
       <Modal visible={modal} transparent animationType="slide" onRequestClose={closeModal}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
         <View style={s.overlay}>
           <Pressable style={s.overlayBackdrop} onPress={closeModal} />
           <View style={s.modalCard}>
@@ -313,6 +319,7 @@ export default function HomeScreen() {
             </ScrollView>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

@@ -48,9 +48,10 @@ export default function BudgetsScreen() {
     categorySpend[e.category] = (categorySpend[e.category] || 0) + e.amount;
   });
 
+  const locale = currency === '₹' ? 'en-IN' : 'en-US';
   const shortFmt = (n: number) => {
     if (n >= 1000) return currency + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    return currency + n.toLocaleString('en-IN');
+    return currency + n.toLocaleString(locale);
   };
 
   const save = async () => {

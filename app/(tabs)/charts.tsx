@@ -11,7 +11,8 @@ export default function ChartsScreen() {
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  const fmt = (n: number) => currency + Math.abs(n).toLocaleString('en-IN');
+  const locale = currency === '₹' ? 'en-IN' : 'en-US';
+  const fmt = (n: number) => currency + Math.abs(n).toLocaleString(locale);
 
   const now = new Date();
   const monthStart = startOfMonth(now);
@@ -54,7 +55,7 @@ export default function ChartsScreen() {
 
   const shortFmt = (n: number) => {
     if (n >= 1000) return currency + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    return currency + n.toLocaleString('en-IN');
+    return currency + n.toLocaleString(locale);
   };
 
   return (
