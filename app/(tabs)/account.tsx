@@ -12,6 +12,7 @@ import { useIsPro } from '@/store/useIsPro';
 import { useTheme, Theme } from '@/theme/useTheme';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { getExchangeRates, conversionRate } from '@/lib/exchangeRates';
+import { isCurrencyFree } from '@/lib/entitlements';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
 
@@ -44,6 +45,12 @@ export default function AccountScreen() {
   const selectedCurrency = CURRENCIES.find(c => c.symbol === currency) ?? CURRENCIES[0];
 
   const handleCurrencySelect = async (sym: string) => {
+    const code = CURRENCIES.find(c => c.symbol === sym)?.code ?? 'USD';
+    if (!useStore.getState().isPro && !isCurrencyFree(code)) {
+      setCurrModal(false);
+      router.push('/paywall');
+      return;
+    }
     if (sym === currency) { setCurrModal(false); return; }
     setConverting(true);
     try {
@@ -311,6 +318,7 @@ function CurrencyModal({
 }) {
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
+  const isPro = useIsPro();
   return (
     <Modal visible={visible} transparent animationType="slide">
       <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={converting ? undefined : onClose}>
@@ -343,7 +351,11 @@ function CurrencyModal({
                       <Text style={s.currCode}>{c.code}</Text>
                     </View>
                   </View>
-                  {active && <Text style={s.checkmark}>✓</Text>}
+                  {active
+                    ? <Text style={s.checkmark}>✓</Text>
+                    : !isPro && !isCurrencyFree(c.code)
+                      ? <Text style={s.lockBadge}>🔒 Pro</Text>
+                      : null}
                 </TouchableOpacity>
               );
             })
@@ -460,6 +472,7 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   currName:     { fontSize: 15, fontWeight: '600', color: colors.text },
   currCode:     { fontSize: 12, color: colors.muted, marginTop: 2 },
   checkmark:    { fontSize: 18, color: colors.primary, fontWeight: '700' },
+  lockBadge:    { fontSize: 12, fontWeight: '700', color: colors.primary },
 
   convertingBox:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 28 },
   convertingText: { fontSize: 15, color: colors.muted, fontWeight: '500' },
