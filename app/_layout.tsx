@@ -42,7 +42,10 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <StatusBar style={statusBarStyle} />
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+      </Stack>
     </ErrorBoundary>
   );
 }
