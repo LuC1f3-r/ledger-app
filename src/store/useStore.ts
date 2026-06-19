@@ -8,6 +8,7 @@ interface StoreState {
   budgets:     Budget[];
   userId:      string | null;
   loading:     boolean;
+  isPro:       boolean;
   currency:    string;
   userEmail:   string | null;
   themeMode:    'light' | 'dark' | 'system';
@@ -20,6 +21,7 @@ interface StoreState {
   updateEntry:   (id: string, changes: Partial<Omit<Entry, 'id' | 'created_at' | 'user_id'>>) => Promise<void>;
   setBudget:     (category: string, limit: number) => Promise<void>;
   setCurrency:   (c: string) => void;
+  setIsPro:     (v: boolean) => void;
   setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
   convertCurrency: (newCurrency: string, rate: number) => Promise<void>;
 }
@@ -34,12 +36,14 @@ export const useStore = create<StoreState>((set, get) => ({
   budgets:  [],
   userId:   null,
   loading:  false,
+  isPro:    false,
   currency:  '$',
   userEmail: null,
   themeMode: 'system' as 'light' | 'dark' | 'system',
 
   setUserId:    (id)    => set({ userId: id }),
   setUserEmail: (email) => set({ userEmail: email }),
+  setIsPro:     (v)     => set({ isPro: v }),
 
   loadLocal: async () => {
     const raw   = await AsyncStorage.getItem(LOCAL_KEY);
