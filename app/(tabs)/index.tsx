@@ -11,6 +11,8 @@ import { CAT_COLORS, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
 import { Entry, EntryType } from '@/lib/types';
 import { format } from 'date-fns';
+import AdBanner from '@/components/AdBanner';
+import { showInterstitial } from '@/lib/ads';
 
 const CAT_EMOJIS: Record<string, string> = {
   Groceries:        '🛒',
@@ -109,6 +111,9 @@ export default function HomeScreen() {
         await updateEntry(editingEntry.id, { desc: desc.trim(), amount: +amount, date: dateStr, category, type });
       } else {
         await addEntry({ desc: desc.trim(), amount: +amount, date: dateStr, category, type });
+        if (!useStore.getState().isPro && useStore.getState().entries.length % 5 === 0) {
+          showInterstitial();
+        }
       }
       setModal(false);
       setDesc('');
@@ -211,6 +216,11 @@ export default function HomeScreen() {
           <Text style={s.fabText}>+</Text>
         </TouchableOpacity>
       )}
+
+      {/* Banner ad (free users only) anchored above the tab bar */}
+      <View style={[s.bannerWrap, { bottom: tabBarHeight }]}>
+        <AdBanner />
+      </View>
 
       {/* Add Modal */}
       <Modal visible={modal} transparent animationType="slide" onRequestClose={closeModal}>
@@ -429,6 +439,12 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
     color:       '#fff',
     lineHeight:   30,
     marginTop:   -2,
+  },
+  bannerWrap: {
+    position:   'absolute',
+    left:        0,
+    right:       0,
+    alignItems: 'center',
   },
 
   fieldRow:            { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.secondary, borderRadius: 10, padding: 14, marginBottom: 10 },

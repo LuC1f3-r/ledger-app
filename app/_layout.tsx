@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
 import { configurePurchases, getCustomerInfo, onCustomerInfoUpdate } from '@/lib/purchases';
 import { hasProEntitlement } from '@/lib/entitlements';
+import { initAds, preloadInterstitial } from '@/lib/ads';
 import ErrorBoundary from '@/lib/ErrorBoundary';
 
 export default function RootLayout() {
@@ -24,6 +25,9 @@ export default function RootLayout() {
     const unsubPro = onCustomerInfoUpdate(info =>
       useStore.getState().setIsPro(hasProEntitlement(info)),
     );
+    if (!useStore.getState().isPro) {
+      initAds().then(preloadInterstitial).catch(() => {});
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       const uid = session?.user.id ?? null;
       setUserId(uid);
