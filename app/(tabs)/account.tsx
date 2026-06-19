@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
   TouchableOpacity, Alert, ScrollView, Modal, ActivityIndicator,
@@ -15,6 +15,7 @@ import { useTheme, Theme } from '@/theme/useTheme';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { getExchangeRates, conversionRate } from '@/lib/exchangeRates';
 import { isCurrencyFree, buildSupportMailto } from '@/lib/entitlements';
+import { logScreen, logEvent } from '@/lib/analytics';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
 
@@ -36,6 +37,8 @@ export default function AccountScreen() {
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
+  useEffect(() => { logScreen('Account'); }, []);
+
   // Form state
   const [email,    setEmailVal]  = useState('');
   const [password, setPassword]  = useState('');
@@ -53,6 +56,7 @@ export default function AccountScreen() {
     const code = CURRENCIES.find(c => c.symbol === sym)?.code ?? 'USD';
     if (!useStore.getState().isPro && !isCurrencyFree(code)) {
       setCurrModal(false);
+      logEvent('gate_hit', { feature: 'currency' });
       router.push('/paywall');
       return;
     }
@@ -66,6 +70,7 @@ export default function AccountScreen() {
       Alert.alert('Conversion failed', 'Could not fetch live exchange rates. Check your connection and try again.');
       setCurrency(sym); // fall back to symbol-only change
     } finally {
+      logEvent('currency_changed', { code });
       setConverting(false);
       setCurrModal(false);
     }

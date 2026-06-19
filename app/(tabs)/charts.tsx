@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useStore } from '@/store/useStore';
 import { useIsPro } from '@/store/useIsPro';
+import { logScreen, logEvent } from '@/lib/analytics';
 import { CAT_COLORS } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
 import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns';
@@ -13,6 +14,8 @@ export default function ChartsScreen() {
   const isPro = useIsPro();
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
+
+  useEffect(() => { logScreen('Analytics'); }, []);
 
   const locale = currency === '₹' ? 'en-IN' : 'en-US';
   const fmt = (n: number) => currency + Math.abs(n).toLocaleString(locale);
@@ -72,7 +75,7 @@ export default function ChartsScreen() {
           {isPro ? (
             <TrendChart data={trendData} />
           ) : (
-            <TouchableOpacity style={s.lockBox} activeOpacity={0.85} onPress={() => router.push('/paywall')}>
+            <TouchableOpacity style={s.lockBox} activeOpacity={0.85} onPress={() => { logEvent('gate_hit', { feature: 'analytics' }); router.push('/paywall'); }}>
               <Text style={s.lockEmoji}>🔒</Text>
               <Text style={s.lockTitle}>Unlock trends with Pro</Text>
               <Text style={s.lockSub}>See multi-month income vs. expense trends, ranges & year view.</Text>

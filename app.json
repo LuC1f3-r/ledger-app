@@ -22,7 +22,8 @@
         "backgroundColor": "#443821"
       },
       "package": "com.niyaz.ledger",
-      "versionCode": 6
+      "versionCode": 6,
+      "googleServicesFile": "./google-services.json"
     },
     "updates": {
       "enabled": false
@@ -47,7 +48,9 @@
         {
           "androidAppId": "ca-app-pub-3940256099942544~3347511713"
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/analytics"
     ],
     "extra": {
       "router": {},

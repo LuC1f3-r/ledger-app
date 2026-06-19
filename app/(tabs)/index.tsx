@@ -13,6 +13,7 @@ import { Entry, EntryType } from '@/lib/types';
 import { format } from 'date-fns';
 import AdBanner from '@/components/AdBanner';
 import { showInterstitial } from '@/lib/ads';
+import { logScreen, logEvent } from '@/lib/analytics';
 
 const CAT_EMOJIS: Record<string, string> = {
   Groceries:        '🛒',
@@ -49,6 +50,8 @@ export default function HomeScreen() {
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  useEffect(() => { logScreen('Home'); }, []);
 
   // Close modal on Android back button
   useEffect(() => {
@@ -111,6 +114,7 @@ export default function HomeScreen() {
         await updateEntry(editingEntry.id, { desc: desc.trim(), amount: +amount, date: dateStr, category, type });
       } else {
         await addEntry({ desc: desc.trim(), amount: +amount, date: dateStr, category, type });
+        logEvent('entry_added', { type });
         if (!useStore.getState().isPro && useStore.getState().entries.length % 5 === 0) {
           showInterstitial();
         }

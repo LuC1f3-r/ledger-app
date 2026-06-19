@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, TextInput, Modal, Alert
@@ -11,6 +11,7 @@ import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { router } from 'expo-router';
 import { useIsPro } from '@/store/useIsPro';
 import { canAddBudget } from '@/lib/entitlements';
+import { logScreen, logEvent } from '@/lib/analytics';
 
 const CAT_ICONS: Record<string, string> = {
   Groceries:        '🛒',
@@ -39,6 +40,8 @@ export default function BudgetsScreen() {
   const [selCat, setSelCat] = useState('Food');
   const [limitInput, setLimitInput] = useState('');
 
+  useEffect(() => { logScreen('Budgets'); }, []);
+
   const now        = new Date();
   const monthStart = startOfMonth(now);
   const monthEnd   = endOfMonth(now);
@@ -62,6 +65,7 @@ export default function BudgetsScreen() {
     const existing = budgets.map(b => b.category);
     if (!canAddBudget(budgets.length, selCat, existing, isPro)) {
       setModal(false);
+      logEvent('gate_hit', { feature: 'budget' });
       router.push('/paywall');
       return;
     }
@@ -69,6 +73,7 @@ export default function BudgetsScreen() {
       Alert.alert('Invalid', 'Enter a valid budget amount.'); return;
     }
     await setBudget(selCat, +limitInput);
+    logEvent('budget_created', { category: selCat });
     setModal(false); setLimitInput('');
   };
 

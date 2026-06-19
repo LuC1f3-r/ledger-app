@@ -9,6 +9,7 @@ import { useTheme, Theme } from '@/theme/useTheme';
 import { useStore } from '@/store/useStore';
 import { getCurrentOffering, purchase, restore } from '@/lib/purchases';
 import { hasProEntitlement } from '@/lib/entitlements';
+import { logScreen, logEvent } from '@/lib/analytics';
 
 // Replace with the real hosted URLs from the landing page (plan Op B1).
 const TERMS_URL = 'https://paisopulse.app/terms';
@@ -31,6 +32,8 @@ export default function Paywall() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    logScreen('Paywall');
+    logEvent('paywall_viewed');
     getCurrentOffering()
       .then(o => setPackages(o?.availablePackages ?? []))
       .catch(() => Alert.alert('Store unavailable', 'Could not load plans. Try again later.'))
@@ -39,10 +42,12 @@ export default function Paywall() {
 
   const buy = async (pkg: PurchasesPackage) => {
     setBusy(true);
+    logEvent('plan_selected', { plan: pkg.identifier });
     try {
       const info = await purchase(pkg);
       if (hasProEntitlement(info)) {
         setIsPro(true);
+        logEvent('purchase_completed', { plan: pkg.identifier });
         Alert.alert('Welcome to Pro 🎉', 'All Pro features are unlocked.');
         router.back();
       } else {
@@ -52,7 +57,10 @@ export default function Paywall() {
         );
       }
     } catch (e: any) {
-      if (!e?.userCancelled) Alert.alert('Purchase failed', e?.message ?? 'Please try again.');
+      if (!e?.userCancelled) {
+        logEvent('purchase_failed', { plan: pkg.identifier });
+        Alert.alert('Purchase failed', e?.message ?? 'Please try again.');
+      }
     } finally {
       setBusy(false);
     }
