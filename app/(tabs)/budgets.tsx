@@ -8,6 +8,9 @@ import { useStore } from '@/store/useStore';
 import { CAT_COLORS, EXPENSE_CATEGORIES } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { router } from 'expo-router';
+import { useIsPro } from '@/store/useIsPro';
+import { canAddBudget } from '@/lib/entitlements';
 
 const CAT_ICONS: Record<string, string> = {
   Groceries:        '🛒',
@@ -29,6 +32,7 @@ const CAT_ICONS: Record<string, string> = {
 
 export default function BudgetsScreen() {
   const { entries, budgets, setBudget, currency } = useStore();
+  const isPro  = useIsPro();
   const colors = useTheme();
   const s      = useMemo(() => makeStyles(colors), [colors]);
   const [modal, setModal] = useState(false);
@@ -55,6 +59,12 @@ export default function BudgetsScreen() {
   };
 
   const save = async () => {
+    const existing = budgets.map(b => b.category);
+    if (!canAddBudget(budgets.length, selCat, existing, isPro)) {
+      setModal(false);
+      router.push('/paywall');
+      return;
+    }
     if (!limitInput || isNaN(+limitInput) || +limitInput <= 0) {
       Alert.alert('Invalid', 'Enter a valid budget amount.'); return;
     }
@@ -69,7 +79,9 @@ export default function BudgetsScreen() {
 
         {/* Set Budget button */}
         <TouchableOpacity style={s.setBtn} onPress={() => setModal(true)}>
-          <Text style={s.setBtnText}>+ Set Budget</Text>
+          <Text style={s.setBtnText}>
+            {isPro ? '+ Set Budget' : `+ Set Budget (${budgets.length}/3 free)`}
+          </Text>
         </TouchableOpacity>
 
         {/* Budget cards */}
