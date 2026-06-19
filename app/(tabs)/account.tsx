@@ -2,9 +2,11 @@ import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
   TouchableOpacity, Alert, ScrollView, Modal, ActivityIndicator,
+  Linking, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeRedirectUri } from 'expo-auth-session';
+import Constants from 'expo-constants';
 import { supabase, signInWithGoogle } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useStore } from '@/store/useStore';
@@ -12,11 +14,14 @@ import { useIsPro } from '@/store/useIsPro';
 import { useTheme, Theme } from '@/theme/useTheme';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { getExchangeRates, conversionRate } from '@/lib/exchangeRates';
-import { isCurrencyFree } from '@/lib/entitlements';
+import { isCurrencyFree, buildSupportMailto } from '@/lib/entitlements';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// TODO(Op B5): replace with the real dedicated support address before launch.
+const SUPPORT_EMAIL = 'support@paisopulse.app';
 
 const CURRENCIES = [
   { symbol: '₹', code: 'INR', name: 'Indian Rupee'  },
@@ -301,6 +306,30 @@ function PreferencesSection({
             ))}
           </View>
         </View>
+
+        {/* Support row */}
+        <TouchableOpacity
+          style={s.settingRowBordered}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Contact support or report a bug"
+          onPress={() => {
+            const url = buildSupportMailto(SUPPORT_EMAIL, {
+              appVersion: Constants.expoConfig?.version ?? 'unknown',
+              platform: Platform.OS,
+              isPro: useStore.getState().isPro,
+            });
+            Linking.openURL(url).catch(() =>
+              Alert.alert('No email app', `Please email us at ${SUPPORT_EMAIL}`),
+            );
+          }}
+        >
+          <View style={s.settingLeft}>
+            <View style={s.iconBox}><Text style={s.iconBoxText}>✉</Text></View>
+            <Text style={s.settingLabel}>Contact / Report a bug</Text>
+          </View>
+          <Text style={s.chevron}>›</Text>
+        </TouchableOpacity>
 
       </View>
     </>
