@@ -6,7 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase, signInWithGoogle } from '@/lib/supabase';
+import { router } from 'expo-router';
 import { useStore } from '@/store/useStore';
+import { useIsPro } from '@/store/useIsPro';
 import { useTheme, Theme } from '@/theme/useTheme';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { getExchangeRates, conversionRate } from '@/lib/exchangeRates';
@@ -150,6 +152,7 @@ export default function AccountScreen() {
             </TouchableOpacity>
           </View>
 
+          <ProCard />
           <PreferencesSection
             currency={currency}
             selectedCurrency={selectedCurrency}
@@ -189,6 +192,7 @@ export default function AccountScreen() {
         </View>
 
         {/* ── Preferences always visible ── */}
+        <ProCard />
         <PreferencesSection
           currency={currency}
           selectedCurrency={selectedCurrency}
@@ -208,6 +212,33 @@ export default function AccountScreen() {
 }
 
 // ── Sub-components ────────────────────────────────────────────────
+
+function ProCard() {
+  const colors = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+  const isPro = useIsPro();
+
+  if (isPro) {
+    return (
+      <View style={[s.card, { borderColor: colors.green }]}>
+        <Text style={[s.proCardTitle, { color: colors.green }]}>★ PaisoPulse Pro active</Text>
+        <Text style={s.proCardBody}>Thanks for supporting the app — all features unlocked.</Text>
+      </View>
+    );
+  }
+  return (
+    <TouchableOpacity
+      style={[s.card, { borderColor: colors.primary }]}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel="Upgrade to PaisoPulse Pro"
+      onPress={() => router.push('/paywall')}
+    >
+      <Text style={[s.proCardTitle, { color: colors.primary }]}>Upgrade to PaisoPulse Pro</Text>
+      <Text style={s.proCardBody}>Remove ads, unlock all currencies, advanced analytics & unlimited budgets.</Text>
+    </TouchableOpacity>
+  );
+}
 
 function PreferencesSection({
   currency, selectedCurrency, onCurrencyPress,
@@ -392,6 +423,10 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   offlineNote: { flexDirection: 'row', gap: 10, backgroundColor: colors.secondary, borderRadius: 10, padding: 14 },
   offlineIcon: { fontSize: 15, color: colors.muted, marginTop: 1 },
   offlineText: { flex: 1, fontSize: 13, color: colors.muted, lineHeight: 20 },
+
+  // ── Pro card ──
+  proCardTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+  proCardBody:  { fontSize: 13, color: colors.muted, lineHeight: 20 },
 
   // ── Preferences ──
   sectionTitle:  { fontSize: 11, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, paddingLeft: 4, marginBottom: 8 },
