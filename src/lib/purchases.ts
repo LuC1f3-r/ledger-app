@@ -15,6 +15,12 @@ export function configurePurchases(): void {
     console.warn('[Purchases] EXPO_PUBLIC_REVENUECAT_ANDROID_KEY is not set — Pro features will be unavailable.');
     return;
   }
+  // A RevenueCat Test Store key (test_…) crashes release builds by design. Refuse it
+  // outside dev so a misconfigured production build degrades instead of crashing.
+  if (!__DEV__ && ANDROID_KEY.startsWith('test_')) {
+    console.warn('[Purchases] Test Store key detected in a release build — skipping configuration. Use a goog_ key in production.');
+    return;
+  }
   if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
   Purchases.configure({ apiKey: ANDROID_KEY });
   configured = true;
