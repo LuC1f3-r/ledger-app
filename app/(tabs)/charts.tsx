@@ -1,18 +1,26 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useStore } from '@/store/useStore';
+import { useIsPro } from '@/store/useIsPro';
+import { logScreen, logEvent } from '@/lib/analytics';
+import { currencySymbol } from '@/lib/exchangeRates';
 import { CAT_COLORS } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
 import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns';
 
 export default function ChartsScreen() {
   const { entries, currency } = useStore();
+  const isPro = useIsPro();
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  const locale = currency === '₹' ? 'en-IN' : 'en-US';
-  const fmt = (n: number) => currency + Math.abs(n).toLocaleString(locale);
+  useEffect(() => { logScreen('Analytics'); }, []);
+
+  const sym    = currencySymbol(currency);
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US';
+  const fmt = (n: number) => sym + Math.abs(n).toLocaleString(locale);
 
   const now = new Date();
   const monthStart = startOfMonth(now);
@@ -54,8 +62,8 @@ export default function ChartsScreen() {
   const maxCat = catData[0]?.[1] || 1;
 
   const shortFmt = (n: number) => {
-    if (n >= 1000) return currency + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    return currency + n.toLocaleString(locale);
+    if (n >= 1000) return sym + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return sym + n.toLocaleString(locale);
   };
 
   return (
@@ -66,7 +74,15 @@ export default function ChartsScreen() {
         {/* 6-Month Trend */}
         <View style={s.card}>
           <Text style={s.cardTitle}>6-Month Trend</Text>
-          <TrendChart data={trendData} />
+          {isPro ? (
+            <TrendChart data={trendData} />
+          ) : (
+            <TouchableOpacity style={s.lockBox} activeOpacity={0.85} onPress={() => { logEvent('gate_hit', { feature: 'analytics' }); router.push('/paywall'); }}>
+              <Text style={s.lockEmoji}>🔒</Text>
+              <Text style={s.lockTitle}>Unlock trends with Pro</Text>
+              <Text style={s.lockSub}>See multi-month income vs. expense trends, ranges & year view.</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Spending Breakdown */}
@@ -207,6 +223,12 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   card:           { backgroundColor: colors.card, borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: colors.border },
   cardTitle:      { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 16 },
   empty:          { color: colors.muted, fontSize: 13, textAlign: 'center', paddingVertical: 20 },
+
+  // Pro lock (advanced analytics)
+  lockBox:   { alignItems: 'center', paddingVertical: 24, gap: 6 },
+  lockEmoji: { fontSize: 28 },
+  lockTitle: { fontSize: 15, fontWeight: '700', color: colors.primary },
+  lockSub:   { fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 19 },
 
   // Breakdown
   breakdownRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },

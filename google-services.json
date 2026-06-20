@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1060407042091",
+    "project_id": "paiso-pulse",
+    "storage_bucket": "paiso-pulse.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1060407042091:android:a112243921553ac1d28a6e",
+        "android_client_info": {
+          "package_name": "com.niyaz.ledger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTNUzLVgK8GAD6IhQFlUwOTA6qPod7-L8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

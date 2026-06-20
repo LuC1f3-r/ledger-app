@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, TextInput, Modal, Alert
@@ -8,6 +8,11 @@ import { useStore } from '@/store/useStore';
 import { CAT_COLORS, EXPENSE_CATEGORIES } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { router } from 'expo-router';
+import { useIsPro } from '@/store/useIsPro';
+import { canAddBudget } from '@/lib/entitlements';
+import { logScreen, logEvent } from '@/lib/analytics';
+import { currencySymbol } from '@/lib/exchangeRates';
 
 const CAT_ICONS: Record<string, string> = {
   Groceries:        '🛒',
@@ -29,11 +34,14 @@ const CAT_ICONS: Record<string, string> = {
 
 export default function BudgetsScreen() {
   const { entries, budgets, setBudget, currency } = useStore();
+  const isPro  = useIsPro();
   const colors = useTheme();
   const s      = useMemo(() => makeStyles(colors), [colors]);
   const [modal, setModal] = useState(false);
   const [selCat, setSelCat] = useState('Food');
   const [limitInput, setLimitInput] = useState('');
+
+  useEffect(() => { logScreen('Budgets'); }, []);
 
   const now        = new Date();
   const monthStart = startOfMonth(now);
@@ -48,17 +56,26 @@ export default function BudgetsScreen() {
     categorySpend[e.category] = (categorySpend[e.category] || 0) + e.amount;
   });
 
-  const locale = currency === '₹' ? 'en-IN' : 'en-US';
+  const sym    = currencySymbol(currency);
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US';
   const shortFmt = (n: number) => {
-    if (n >= 1000) return currency + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    return currency + n.toLocaleString(locale);
+    if (n >= 1000) return sym + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return sym + n.toLocaleString(locale);
   };
 
   const save = async () => {
+    const existing = budgets.map(b => b.category);
+    if (!canAddBudget(budgets.length, selCat, existing, isPro)) {
+      setModal(false);
+      logEvent('gate_hit', { feature: 'budget' });
+      router.push('/paywall');
+      return;
+    }
     if (!limitInput || isNaN(+limitInput) || +limitInput <= 0) {
       Alert.alert('Invalid', 'Enter a valid budget amount.'); return;
     }
     await setBudget(selCat, +limitInput);
+    logEvent('budget_created', { category: selCat });
     setModal(false); setLimitInput('');
   };
 
@@ -69,7 +86,9 @@ export default function BudgetsScreen() {
 
         {/* Set Budget button */}
         <TouchableOpacity style={s.setBtn} onPress={() => setModal(true)}>
-          <Text style={s.setBtnText}>+ Set Budget</Text>
+          <Text style={s.setBtnText}>
+            {isPro ? '+ Set Budget' : `+ Set Budget (${budgets.length}/3 free)`}
+          </Text>
         </TouchableOpacity>
 
         {/* Budget cards */}
@@ -142,12 +161,12 @@ export default function BudgetsScreen() {
             </ScrollView>
 
             {/* Amount input */}
-            <Text style={s.modalLabel}>Monthly limit ({currency})</Text>
+            <Text style={s.modalLabel}>Monthly limit ({sym})</Text>
             <TextInput
               style={s.input}
               value={limitInput}
               onChangeText={setLimitInput}
-              placeholder={`e.g. ${currency}5000`}
+              placeholder={`e.g. ${sym}5000`}
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
             />

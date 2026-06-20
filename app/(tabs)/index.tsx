@@ -11,6 +11,10 @@ import { CAT_COLORS, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
 import { Entry, EntryType } from '@/lib/types';
 import { format } from 'date-fns';
+import AdBanner from '@/components/AdBanner';
+import { showInterstitial } from '@/lib/ads';
+import { logScreen, logEvent } from '@/lib/analytics';
+import { currencySymbol } from '@/lib/exchangeRates';
 
 const CAT_EMOJIS: Record<string, string> = {
   Groceries:        '🛒',
@@ -47,6 +51,8 @@ export default function HomeScreen() {
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  useEffect(() => { logScreen('Home'); }, []);
 
   // Close modal on Android back button
   useEffect(() => {
@@ -87,8 +93,9 @@ export default function HomeScreen() {
     setModal(true);
   };
 
-  const locale = currency === '₹' ? 'en-IN' : 'en-US';
-  const fmt = (n: number) => currency + Math.abs(n).toLocaleString(locale);
+  const sym    = currencySymbol(currency);
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US';
+  const fmt = (n: number) => sym + Math.abs(n).toLocaleString(locale);
 
   const totalIncome  = entries.filter(e => e.type === 'income' ).reduce((s, e) => s + e.amount, 0);
   const totalExpense = entries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0);
@@ -109,6 +116,10 @@ export default function HomeScreen() {
         await updateEntry(editingEntry.id, { desc: desc.trim(), amount: +amount, date: dateStr, category, type });
       } else {
         await addEntry({ desc: desc.trim(), amount: +amount, date: dateStr, category, type });
+        logEvent('entry_added', { type });
+        if (!useStore.getState().isPro && useStore.getState().entries.length % 5 === 0) {
+          showInterstitial();
+        }
       }
       setModal(false);
       setDesc('');
@@ -166,6 +177,9 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Ad banner (free users only) — inline above filter tabs */}
+        <AdBanner />
+
         {/* Filter tabs — segmented control */}
         <View style={s.filterContainer}>
           {(['all', 'expense', 'income'] as const).map(f => (
@@ -212,6 +226,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       )}
 
+
       {/* Add Modal */}
       <Modal visible={modal} transparent animationType="slide" onRequestClose={closeModal}>
         <KeyboardAvoidingView
@@ -250,9 +265,9 @@ export default function HomeScreen() {
             {/* Large amount display */}
             <TextInput
               style={[s.amountInput, { color: type === 'expense' ? colors.red : colors.green }]}
-              value={amount ? `${currency}${amount}` : ''}
+              value={amount ? `${sym}${amount}` : ''}
               onChangeText={t => setAmount(t.replace(/[^0-9.]/g, ''))}
-              placeholder={`${currency}0.00`}
+              placeholder={`${sym}0.00`}
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
             />
@@ -430,6 +445,7 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
     lineHeight:   30,
     marginTop:   -2,
   },
+
 
   fieldRow:            { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.secondary, borderRadius: 10, padding: 14, marginBottom: 10 },
   fieldIcon:           { fontSize: 16, color: colors.muted },

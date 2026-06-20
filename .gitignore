@@ -31,3 +31,6 @@ ruvector.db
 credentials.json
 *.jks
 *.keystore
+
+# Vim swap files
+*.swp

@@ -4,6 +4,9 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
+import { configurePurchases, getCustomerInfo, onCustomerInfoUpdate } from '@/lib/purchases';
+import { hasProEntitlement } from '@/lib/entitlements';
+import { initAds, preloadInterstitial } from '@/lib/ads';
 import ErrorBoundary from '@/lib/ErrorBoundary';
 
 export default function RootLayout() {
@@ -15,6 +18,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     loadLocal();
+    configurePurchases();
+    getCustomerInfo()
+      .then(info => useStore.getState().setIsPro(hasProEntitlement(info)))
+      .catch(() => {});
+    const unsubPro = onCustomerInfoUpdate(info =>
+      useStore.getState().setIsPro(hasProEntitlement(info)),
+    );
+    if (!useStore.getState().isPro) {
+      initAds().then(preloadInterstitial).catch(() => {});
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       const uid = session?.user.id ?? null;
       setUserId(uid);
@@ -27,13 +40,16 @@ export default function RootLayout() {
       setUserEmail(session?.user.email ?? null);
       if (uid) syncFromCloud();
     });
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); unsubPro(); };
   }, []);
 
   return (
     <ErrorBoundary>
       <StatusBar style={statusBarStyle} />
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+      </Stack>
     </ErrorBoundary>
   );
 }

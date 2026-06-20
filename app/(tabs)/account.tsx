@@ -1,32 +1,67 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
   TouchableOpacity, Alert, ScrollView, Modal, ActivityIndicator,
+  Linking, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { makeRedirectUri } from 'expo-auth-session';
+import Constants from 'expo-constants';
 import { supabase, signInWithGoogle } from '@/lib/supabase';
+import { router } from 'expo-router';
 import { useStore } from '@/store/useStore';
+import { useIsPro } from '@/store/useIsPro';
 import { useTheme, Theme } from '@/theme/useTheme';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { getExchangeRates, conversionRate } from '@/lib/exchangeRates';
+import { getExchangeRates, conversionRate, currencySymbol } from '@/lib/exchangeRates';
+import { isCurrencyFree, buildSupportMailto } from '@/lib/entitlements';
+import { logScreen, logEvent } from '@/lib/analytics';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// TODO(Op B5): replace with the real dedicated support address before launch.
+const SUPPORT_EMAIL = 'kingpinvisionforge@gmail.com';
+
 const CURRENCIES = [
-  { symbol: '₹', code: 'INR', name: 'Indian Rupee'  },
-  { symbol: '$', code: 'USD', name: 'US Dollar'      },
-  { symbol: '€', code: 'EUR', name: 'Euro'           },
-  { symbol: '£', code: 'GBP', name: 'British Pound'  },
-  { symbol: '¥', code: 'JPY', name: 'Japanese Yen'   },
+  // ── Free currencies ──
+  { symbol: '₹', code: 'INR', name: 'Indian Rupee'        },
+  { symbol: '$', code: 'USD', name: 'US Dollar'            },
+  { symbol: '€', code: 'EUR', name: 'Euro'                 },
+  { symbol: '£', code: 'GBP', name: 'British Pound'        },
+  // ── Pro currencies ──
+  { symbol: '¥', code: 'JPY', name: 'Japanese Yen'         },
+  { symbol: '¥', code: 'CNY', name: 'Chinese Yuan'         },
+  { symbol: '₩', code: 'KRW', name: 'South Korean Won'     },
+  { symbol: 'C$', code: 'CAD', name: 'Canadian Dollar'     },
+  { symbol: 'A$', code: 'AUD', name: 'Australian Dollar'   },
+  { symbol: 'NZ$', code: 'NZD', name: 'New Zealand Dollar' },
+  { symbol: 'CHF', code: 'CHF', name: 'Swiss Franc'        },
+  { symbol: 'kr', code: 'SEK', name: 'Swedish Krona'       },
+  { symbol: 'kr', code: 'NOK', name: 'Norwegian Krone'     },
+  { symbol: 'kr', code: 'DKK', name: 'Danish Krone'        },
+  { symbol: 'R$', code: 'BRL', name: 'Brazilian Real'      },
+  { symbol: 'MX$', code: 'MXN', name: 'Mexican Peso'      },
+  { symbol: 'R', code: 'ZAR', name: 'South African Rand'   },
+  { symbol: '₺', code: 'TRY', name: 'Turkish Lira'         },
+  { symbol: 'د.إ', code: 'AED', name: 'UAE Dirham'         },
+  { symbol: 'ر.س', code: 'SAR', name: 'Saudi Riyal'        },
+  { symbol: 'S$', code: 'SGD', name: 'Singapore Dollar'    },
+  { symbol: '฿', code: 'THB', name: 'Thai Baht'            },
+  { symbol: '₱', code: 'PHP', name: 'Philippine Peso'      },
+  { symbol: 'Rp', code: 'IDR', name: 'Indonesian Rupiah'   },
+  { symbol: 'RM', code: 'MYR', name: 'Malaysian Ringgit'   },
+  { symbol: 'ل.س', code: 'SYP', name: 'Syrian Pound'         },
+  { symbol: 'د.ك', code: 'KWD', name: 'Kuwaiti Dinar'        },
 ];
 
 export default function AccountScreen() {
   const { userId, userEmail, syncFromCloud, currency, setCurrency, convertCurrency } = useStore();
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
+
+  useEffect(() => { logScreen('Account'); }, []);
 
   // Form state
   const [email,    setEmailVal]  = useState('');
@@ -39,19 +74,29 @@ export default function AccountScreen() {
   // Currency modal
   const [currModal,    setCurrModal]    = useState(false);
   const [converting,   setConverting]   = useState(false);
-  const selectedCurrency = CURRENCIES.find(c => c.symbol === currency) ?? CURRENCIES[0];
+  const selectedCurrency = CURRENCIES.find(c => c.code === currency) ?? CURRENCIES[0];
 
-  const handleCurrencySelect = async (sym: string) => {
-    if (sym === currency) { setCurrModal(false); return; }
+  const handleCurrencySelect = async (code: string) => {
+    if (!useStore.getState().isPro && !isCurrencyFree(code)) {
+      setCurrModal(false);
+      logEvent('gate_hit', { feature: 'currency' });
+      router.push('/paywall');
+      return;
+    }
+    if (code === currency) { setCurrModal(false); return; }
     setConverting(true);
     try {
       const rates = await getExchangeRates();
-      const rate  = conversionRate(rates, currency, sym);
-      await convertCurrency(sym, rate);
+      const fromCode = currency; // already a code now
+      const fromRate = rates[fromCode] ?? 1;
+      const toRate   = rates[code] ?? 1;
+      const rate     = toRate / fromRate;
+      await convertCurrency(code, rate);
     } catch {
       Alert.alert('Conversion failed', 'Could not fetch live exchange rates. Check your connection and try again.');
-      setCurrency(sym); // fall back to symbol-only change
+      setCurrency(code); // fall back to code-only change
     } finally {
+      logEvent('currency_changed', { code });
       setConverting(false);
       setCurrModal(false);
     }
@@ -150,6 +195,7 @@ export default function AccountScreen() {
             </TouchableOpacity>
           </View>
 
+          <ProCard />
           <PreferencesSection
             currency={currency}
             selectedCurrency={selectedCurrency}
@@ -189,6 +235,7 @@ export default function AccountScreen() {
         </View>
 
         {/* ── Preferences always visible ── */}
+        <ProCard />
         <PreferencesSection
           currency={currency}
           selectedCurrency={selectedCurrency}
@@ -208,6 +255,33 @@ export default function AccountScreen() {
 }
 
 // ── Sub-components ────────────────────────────────────────────────
+
+function ProCard() {
+  const colors = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+  const isPro = useIsPro();
+
+  if (isPro) {
+    return (
+      <View style={[s.card, { borderColor: colors.green }]}>
+        <Text style={[s.proCardTitle, { color: colors.green }]}>★ PaisoPulse Pro active</Text>
+        <Text style={s.proCardBody}>Thanks for supporting the app — all features unlocked.</Text>
+      </View>
+    );
+  }
+  return (
+    <TouchableOpacity
+      style={[s.card, { borderColor: colors.primary }]}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel="Upgrade to PaisoPulse Pro"
+      onPress={() => router.push('/paywall')}
+    >
+      <Text style={[s.proCardTitle, { color: colors.primary }]}>Upgrade to PaisoPulse Pro</Text>
+      <Text style={s.proCardBody}>Remove ads, unlock all currencies, advanced analytics & unlimited budgets.</Text>
+    </TouchableOpacity>
+  );
+}
 
 function PreferencesSection({
   currency, selectedCurrency, onCurrencyPress,
@@ -230,7 +304,7 @@ function PreferencesSection({
         <TouchableOpacity style={s.settingRow} onPress={onCurrencyPress} activeOpacity={0.7}>
           <View style={s.settingLeft}>
             <View style={s.iconBox}>
-              <Text style={s.iconBoxText}>{currency}</Text>
+              <Text style={s.iconBoxText}>{currencySymbol(currency)}</Text>
             </View>
             <Text style={s.settingLabel}>Currency</Text>
           </View>
@@ -264,6 +338,30 @@ function PreferencesSection({
           </View>
         </View>
 
+        {/* Support row */}
+        <TouchableOpacity
+          style={s.settingRowBordered}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Contact support or report a bug"
+          onPress={() => {
+            const url = buildSupportMailto(SUPPORT_EMAIL, {
+              appVersion: Constants.expoConfig?.version ?? 'unknown',
+              platform: Platform.OS,
+              isPro: useStore.getState().isPro,
+            });
+            Linking.openURL(url).catch(() =>
+              Alert.alert('No email app', `Please email us at ${SUPPORT_EMAIL}`),
+            );
+          }}
+        >
+          <View style={s.settingLeft}>
+            <View style={s.iconBox}><Text style={s.iconBoxText}>✉</Text></View>
+            <Text style={s.settingLabel}>Contact / Report a bug</Text>
+          </View>
+          <Text style={s.chevron}>›</Text>
+        </TouchableOpacity>
+
       </View>
     </>
   );
@@ -274,12 +372,13 @@ function CurrencyModal({
 }: {
   visible: boolean;
   currency: string;
-  onSelect: (symbol: string) => void;
+  onSelect: (code: string) => void;
   onClose: () => void;
   converting: boolean;
 }) {
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
+  const isPro = useIsPro();
   return (
     <Modal visible={visible} transparent animationType="slide">
       <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={converting ? undefined : onClose}>
@@ -293,12 +392,12 @@ function CurrencyModal({
             </View>
           ) : (
             CURRENCIES.map(c => {
-              const active = c.symbol === currency;
+              const active = c.code === currency;
               return (
                 <TouchableOpacity
                   key={c.code}
                   style={s.currRow}
-                  onPress={() => onSelect(c.symbol)}
+                  onPress={() => onSelect(c.code)}
                 >
                   <View style={s.currLeft}>
                     <View style={[
@@ -312,7 +411,11 @@ function CurrencyModal({
                       <Text style={s.currCode}>{c.code}</Text>
                     </View>
                   </View>
-                  {active && <Text style={s.checkmark}>✓</Text>}
+                  {active
+                    ? <Text style={s.checkmark}>✓</Text>
+                    : !isPro && !isCurrencyFree(c.code)
+                      ? <Text style={s.lockBadge}>🔒 Pro</Text>
+                      : null}
                 </TouchableOpacity>
               );
             })
@@ -393,6 +496,10 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   offlineIcon: { fontSize: 15, color: colors.muted, marginTop: 1 },
   offlineText: { flex: 1, fontSize: 13, color: colors.muted, lineHeight: 20 },
 
+  // ── Pro card ──
+  proCardTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+  proCardBody:  { fontSize: 13, color: colors.muted, lineHeight: 20 },
+
   // ── Preferences ──
   sectionTitle:  { fontSize: 11, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, paddingLeft: 4, marginBottom: 8 },
   settingsCard:  { backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
@@ -425,6 +532,7 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
   currName:     { fontSize: 15, fontWeight: '600', color: colors.text },
   currCode:     { fontSize: 12, color: colors.muted, marginTop: 2 },
   checkmark:    { fontSize: 18, color: colors.primary, fontWeight: '700' },
+  lockBadge:    { fontSize: 12, fontWeight: '700', color: colors.primary },
 
   convertingBox:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 28 },
   convertingText: { fontSize: 15, color: colors.muted, fontWeight: '500' },
