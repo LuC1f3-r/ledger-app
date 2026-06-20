@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { useIsPro } from '@/store/useIsPro';
 import { canAddBudget } from '@/lib/entitlements';
 import { logScreen, logEvent } from '@/lib/analytics';
+import { currencySymbol } from '@/lib/exchangeRates';
 
 const CAT_ICONS: Record<string, string> = {
   Groceries:        '🛒',
@@ -55,10 +56,11 @@ export default function BudgetsScreen() {
     categorySpend[e.category] = (categorySpend[e.category] || 0) + e.amount;
   });
 
-  const locale = currency === '₹' ? 'en-IN' : 'en-US';
+  const sym    = currencySymbol(currency);
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US';
   const shortFmt = (n: number) => {
-    if (n >= 1000) return currency + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    return currency + n.toLocaleString(locale);
+    if (n >= 1000) return sym + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return sym + n.toLocaleString(locale);
   };
 
   const save = async () => {
@@ -159,12 +161,12 @@ export default function BudgetsScreen() {
             </ScrollView>
 
             {/* Amount input */}
-            <Text style={s.modalLabel}>Monthly limit ({currency})</Text>
+            <Text style={s.modalLabel}>Monthly limit ({sym})</Text>
             <TextInput
               style={s.input}
               value={limitInput}
               onChangeText={setLimitInput}
-              placeholder={`e.g. ${currency}5000`}
+              placeholder={`e.g. ${sym}5000`}
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
             />

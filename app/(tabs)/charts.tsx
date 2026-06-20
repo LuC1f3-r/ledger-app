@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useStore } from '@/store/useStore';
 import { useIsPro } from '@/store/useIsPro';
 import { logScreen, logEvent } from '@/lib/analytics';
+import { currencySymbol } from '@/lib/exchangeRates';
 import { CAT_COLORS } from '@/theme';
 import { useTheme, Theme } from '@/theme/useTheme';
 import { startOfMonth, endOfMonth, isWithinInterval, format } from 'date-fns';
@@ -17,8 +18,9 @@ export default function ChartsScreen() {
 
   useEffect(() => { logScreen('Analytics'); }, []);
 
-  const locale = currency === '₹' ? 'en-IN' : 'en-US';
-  const fmt = (n: number) => currency + Math.abs(n).toLocaleString(locale);
+  const sym    = currencySymbol(currency);
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US';
+  const fmt = (n: number) => sym + Math.abs(n).toLocaleString(locale);
 
   const now = new Date();
   const monthStart = startOfMonth(now);
@@ -60,8 +62,8 @@ export default function ChartsScreen() {
   const maxCat = catData[0]?.[1] || 1;
 
   const shortFmt = (n: number) => {
-    if (n >= 1000) return currency + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-    return currency + n.toLocaleString(locale);
+    if (n >= 1000) return sym + (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return sym + n.toLocaleString(locale);
   };
 
   return (

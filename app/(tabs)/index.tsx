@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import AdBanner from '@/components/AdBanner';
 import { showInterstitial } from '@/lib/ads';
 import { logScreen, logEvent } from '@/lib/analytics';
+import { currencySymbol } from '@/lib/exchangeRates';
 
 const CAT_EMOJIS: Record<string, string> = {
   Groceries:        '🛒',
@@ -92,8 +93,9 @@ export default function HomeScreen() {
     setModal(true);
   };
 
-  const locale = currency === '₹' ? 'en-IN' : 'en-US';
-  const fmt = (n: number) => currency + Math.abs(n).toLocaleString(locale);
+  const sym    = currencySymbol(currency);
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US';
+  const fmt = (n: number) => sym + Math.abs(n).toLocaleString(locale);
 
   const totalIncome  = entries.filter(e => e.type === 'income' ).reduce((s, e) => s + e.amount, 0);
   const totalExpense = entries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0);
@@ -263,9 +265,9 @@ export default function HomeScreen() {
             {/* Large amount display */}
             <TextInput
               style={[s.amountInput, { color: type === 'expense' ? colors.red : colors.green }]}
-              value={amount ? `${currency}${amount}` : ''}
+              value={amount ? `${sym}${amount}` : ''}
               onChangeText={t => setAmount(t.replace(/[^0-9.]/g, ''))}
-              placeholder={`${currency}0.00`}
+              placeholder={`${sym}0.00`}
               placeholderTextColor={colors.muted}
               keyboardType="numeric"
             />

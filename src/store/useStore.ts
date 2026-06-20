@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Entry, Budget } from '../lib/types';
 import { supabase } from '../lib/supabase';
+import { toCurrencyCode } from '../lib/exchangeRates';
 
 interface StoreState {
   entries:     Entry[];
@@ -37,7 +38,7 @@ export const useStore = create<StoreState>((set, get) => ({
   userId:   null,
   loading:  false,
   isPro:    false,
-  currency:  '$',
+  currency:  'USD',
   userEmail: null,
   themeMode: 'system' as 'light' | 'dark' | 'system',
 
@@ -53,7 +54,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({
       entries:   raw  ? JSON.parse(raw)  : [],
       budgets:   braw ? JSON.parse(braw) : [],
-      currency:  curr ?? '$',
+      currency:  toCurrencyCode(curr ?? 'USD'),
       themeMode: (theme as 'light' | 'dark' | 'system' | null) ?? 'system',
     });
   },

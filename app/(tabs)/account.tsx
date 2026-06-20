@@ -13,7 +13,7 @@ import { useStore } from '@/store/useStore';
 import { useIsPro } from '@/store/useIsPro';
 import { useTheme, Theme } from '@/theme/useTheme';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { getExchangeRates, conversionRate } from '@/lib/exchangeRates';
+import { getExchangeRates, conversionRate, currencySymbol } from '@/lib/exchangeRates';
 import { isCurrencyFree, buildSupportMailto } from '@/lib/entitlements';
 import { logScreen, logEvent } from '@/lib/analytics';
 
@@ -25,11 +25,35 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SUPPORT_EMAIL = 'kingpinvisionforge@gmail.com';
 
 const CURRENCIES = [
-  { symbol: '₹', code: 'INR', name: 'Indian Rupee'  },
-  { symbol: '$', code: 'USD', name: 'US Dollar'      },
-  { symbol: '€', code: 'EUR', name: 'Euro'           },
-  { symbol: '£', code: 'GBP', name: 'British Pound'  },
-  { symbol: '¥', code: 'JPY', name: 'Japanese Yen'   },
+  // ── Free currencies ──
+  { symbol: '₹', code: 'INR', name: 'Indian Rupee'        },
+  { symbol: '$', code: 'USD', name: 'US Dollar'            },
+  { symbol: '€', code: 'EUR', name: 'Euro'                 },
+  { symbol: '£', code: 'GBP', name: 'British Pound'        },
+  // ── Pro currencies ──
+  { symbol: '¥', code: 'JPY', name: 'Japanese Yen'         },
+  { symbol: '¥', code: 'CNY', name: 'Chinese Yuan'         },
+  { symbol: '₩', code: 'KRW', name: 'South Korean Won'     },
+  { symbol: 'C$', code: 'CAD', name: 'Canadian Dollar'     },
+  { symbol: 'A$', code: 'AUD', name: 'Australian Dollar'   },
+  { symbol: 'NZ$', code: 'NZD', name: 'New Zealand Dollar' },
+  { symbol: 'CHF', code: 'CHF', name: 'Swiss Franc'        },
+  { symbol: 'kr', code: 'SEK', name: 'Swedish Krona'       },
+  { symbol: 'kr', code: 'NOK', name: 'Norwegian Krone'     },
+  { symbol: 'kr', code: 'DKK', name: 'Danish Krone'        },
+  { symbol: 'R$', code: 'BRL', name: 'Brazilian Real'      },
+  { symbol: 'MX$', code: 'MXN', name: 'Mexican Peso'      },
+  { symbol: 'R', code: 'ZAR', name: 'South African Rand'   },
+  { symbol: '₺', code: 'TRY', name: 'Turkish Lira'         },
+  { symbol: 'د.إ', code: 'AED', name: 'UAE Dirham'         },
+  { symbol: 'ر.س', code: 'SAR', name: 'Saudi Riyal'        },
+  { symbol: 'S$', code: 'SGD', name: 'Singapore Dollar'    },
+  { symbol: '฿', code: 'THB', name: 'Thai Baht'            },
+  { symbol: '₱', code: 'PHP', name: 'Philippine Peso'      },
+  { symbol: 'Rp', code: 'IDR', name: 'Indonesian Rupiah'   },
+  { symbol: 'RM', code: 'MYR', name: 'Malaysian Ringgit'   },
+  { symbol: 'ل.س', code: 'SYP', name: 'Syrian Pound'         },
+  { symbol: 'د.ك', code: 'KWD', name: 'Kuwaiti Dinar'        },
 ];
 
 export default function AccountScreen() {
@@ -50,25 +74,27 @@ export default function AccountScreen() {
   // Currency modal
   const [currModal,    setCurrModal]    = useState(false);
   const [converting,   setConverting]   = useState(false);
-  const selectedCurrency = CURRENCIES.find(c => c.symbol === currency) ?? CURRENCIES[0];
+  const selectedCurrency = CURRENCIES.find(c => c.code === currency) ?? CURRENCIES[0];
 
-  const handleCurrencySelect = async (sym: string) => {
-    const code = CURRENCIES.find(c => c.symbol === sym)?.code ?? 'USD';
+  const handleCurrencySelect = async (code: string) => {
     if (!useStore.getState().isPro && !isCurrencyFree(code)) {
       setCurrModal(false);
       logEvent('gate_hit', { feature: 'currency' });
       router.push('/paywall');
       return;
     }
-    if (sym === currency) { setCurrModal(false); return; }
+    if (code === currency) { setCurrModal(false); return; }
     setConverting(true);
     try {
       const rates = await getExchangeRates();
-      const rate  = conversionRate(rates, currency, sym);
-      await convertCurrency(sym, rate);
+      const fromCode = currency; // already a code now
+      const fromRate = rates[fromCode] ?? 1;
+      const toRate   = rates[code] ?? 1;
+      const rate     = toRate / fromRate;
+      await convertCurrency(code, rate);
     } catch {
       Alert.alert('Conversion failed', 'Could not fetch live exchange rates. Check your connection and try again.');
-      setCurrency(sym); // fall back to symbol-only change
+      setCurrency(code); // fall back to code-only change
     } finally {
       logEvent('currency_changed', { code });
       setConverting(false);
@@ -278,7 +304,7 @@ function PreferencesSection({
         <TouchableOpacity style={s.settingRow} onPress={onCurrencyPress} activeOpacity={0.7}>
           <View style={s.settingLeft}>
             <View style={s.iconBox}>
-              <Text style={s.iconBoxText}>{currency}</Text>
+              <Text style={s.iconBoxText}>{currencySymbol(currency)}</Text>
             </View>
             <Text style={s.settingLabel}>Currency</Text>
           </View>
@@ -346,7 +372,7 @@ function CurrencyModal({
 }: {
   visible: boolean;
   currency: string;
-  onSelect: (symbol: string) => void;
+  onSelect: (code: string) => void;
   onClose: () => void;
   converting: boolean;
 }) {
@@ -366,12 +392,12 @@ function CurrencyModal({
             </View>
           ) : (
             CURRENCIES.map(c => {
-              const active = c.symbol === currency;
+              const active = c.code === currency;
               return (
                 <TouchableOpacity
                   key={c.code}
                   style={s.currRow}
-                  onPress={() => onSelect(c.symbol)}
+                  onPress={() => onSelect(c.code)}
                 >
                   <View style={s.currLeft}>
                     <View style={[

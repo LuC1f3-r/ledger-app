@@ -9,7 +9,55 @@ export const SYMBOL_TO_CODE: Record<string, string> = {
   '€': 'EUR',
   '£': 'GBP',
   '¥': 'JPY',
+  '₩': 'KRW',
+  'C$': 'CAD',
+  'A$': 'AUD',
+  'NZ$': 'NZD',
+  'CHF': 'CHF',
+  'kr': 'SEK',
+  'R$': 'BRL',
+  'MX$': 'MXN',
+  'R': 'ZAR',
+  '₺': 'TRY',
+  'د.إ': 'AED',
+  'ر.س': 'SAR',
+  'S$': 'SGD',
+  '฿': 'THB',
+  '₱': 'PHP',
+  'Rp': 'IDR',
+  'RM': 'MYR',
+  'ل.س': 'SYP',
+  'د.ك': 'KWD',
 };
+
+/** Reverse map: currency CODE → display symbol. */
+export const CODE_TO_SYMBOL: Record<string, string> = {
+  INR: '₹',  USD: '$',  EUR: '€',  GBP: '£',
+  JPY: '¥',  CNY: '¥',  KRW: '₩',
+  CAD: 'C$', AUD: 'A$', NZD: 'NZ$', CHF: 'CHF',
+  SEK: 'kr', NOK: 'kr', DKK: 'kr',
+  BRL: 'R$', MXN: 'MX$', ZAR: 'R',
+  TRY: '₺',  AED: 'د.إ', SAR: 'ر.س',
+  SGD: 'S$', THB: '฿',  PHP: '₱',
+  IDR: 'Rp', MYR: 'RM',
+  SYP: 'ل.س', KWD: 'د.ك',
+};
+
+/**
+ * Returns the display symbol for a currency code.
+ * Also handles legacy symbol-stored values (e.g. '$' → '$').
+ */
+export function currencySymbol(codeOrSymbol: string): string {
+  return CODE_TO_SYMBOL[codeOrSymbol] ?? codeOrSymbol;
+}
+
+/** Returns the currency code for a stored value (handles both code and legacy symbol). */
+export function toCurrencyCode(stored: string): string {
+  // Already a valid code (3 uppercase letters)
+  if (/^[A-Z]{3}$/.test(stored) && CODE_TO_SYMBOL[stored]) return stored;
+  // Legacy symbol → code
+  return SYMBOL_TO_CODE[stored] ?? 'USD';
+}
 
 interface Cache {
   timestamp: number;
