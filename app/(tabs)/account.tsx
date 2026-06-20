@@ -22,7 +22,7 @@ type AuthMode = 'signin' | 'signup' | 'reset';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // TODO(Op B5): replace with the real dedicated support address before launch.
-const SUPPORT_EMAIL = 'support@paisopulse.app';
+const SUPPORT_EMAIL = 'kingpinvisionforge@gmail.com';
 
 const CURRENCIES = [
   { symbol: '₹', code: 'INR', name: 'Indian Rupee'  },
