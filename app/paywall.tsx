@@ -12,8 +12,8 @@ import { hasProEntitlement } from '@/lib/entitlements';
 import { logScreen, logEvent } from '@/lib/analytics';
 
 // Replace with the real hosted URLs from the landing page (plan Op B1).
-const TERMS_URL = 'https://paisopulse.app/terms';
-const PRIVACY_URL = 'https://paisopulse.app/privacy';
+const TERMS_URL = 'https://luc1f3-r.github.io/ledger-app/terms.html';
+const PRIVACY_URL = 'https://luc1f3-r.github.io/ledger-app/privacy.html';
 
 const PRO_FEATURES = [
   'Remove all ads',
