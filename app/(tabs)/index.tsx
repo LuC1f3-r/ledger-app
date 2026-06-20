@@ -175,6 +175,9 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Ad banner (free users only) — inline above filter tabs */}
+        <AdBanner />
+
         {/* Filter tabs — segmented control */}
         <View style={s.filterContainer}>
           {(['all', 'expense', 'income'] as const).map(f => (
@@ -221,10 +224,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Banner ad (free users only) anchored above the tab bar */}
-      <View style={[s.bannerWrap, { bottom: tabBarHeight }]}>
-        <AdBanner />
-      </View>
 
       {/* Add Modal */}
       <Modal visible={modal} transparent animationType="slide" onRequestClose={closeModal}>
@@ -444,12 +443,7 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
     lineHeight:   30,
     marginTop:   -2,
   },
-  bannerWrap: {
-    position:   'absolute',
-    left:        0,
-    right:       0,
-    alignItems: 'center',
-  },
+
 
   fieldRow:            { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.secondary, borderRadius: 10, padding: 14, marginBottom: 10 },
   fieldIcon:           { fontSize: 16, color: colors.muted },

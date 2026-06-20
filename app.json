@@ -2,7 +2,7 @@
   "expo": {
     "name": "PaisoPulse",
     "slug": "ledger-app",
-    "version": "1.0.6",
+    "version": "1.0.0",
     "scheme": "ledger",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -22,7 +22,7 @@
         "backgroundColor": "#443821"
       },
       "package": "com.niyaz.ledger",
-      "versionCode": 6,
+      "versionCode": 8,
       "googleServicesFile": "./google-services.json"
     },
     "updates": {
