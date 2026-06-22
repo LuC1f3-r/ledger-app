@@ -25,7 +25,11 @@ export default function AdBanner() {
   if (isPro) return null;
 
   if (isAdsAvailable && BannerAd && BannerAdSize) {
-    return <BannerAd unitId={BANNER_UNIT_ID} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />;
+    return (
+      <View style={styles.adContainer}>
+        <BannerAd unitId={BANNER_UNIT_ID} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} />
+      </View>
+    );
   }
 
   // Beautiful fallback placeholder for development / Expo Go
@@ -42,6 +46,12 @@ export default function AdBanner() {
 }
 
 const styles = StyleSheet.create({
+  adContainer: {
+    marginHorizontal: -20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+  },
   placeholderContainer: {
     height: 50,
     borderWidth: 1,

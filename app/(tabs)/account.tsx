@@ -57,7 +57,7 @@ const CURRENCIES = [
 ];
 
 export default function AccountScreen() {
-  const { userId, userEmail, syncFromCloud, currency, setCurrency, convertCurrency } = useStore();
+  const { userId, userEmail, syncFromCloud, currency, setCurrency, convertCurrency, themeMode, setThemeMode } = useStore();
   const colors = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
@@ -74,6 +74,9 @@ export default function AccountScreen() {
   // Currency modal
   const [currModal,    setCurrModal]    = useState(false);
   const [converting,   setConverting]   = useState(false);
+
+  // Theme modal
+  const [themeModalVisible, setThemeModalVisible] = useState(false);
   const selectedCurrency = CURRENCIES.find(c => c.code === currency) ?? CURRENCIES[0];
 
   const handleCurrencySelect = async (code: string) => {
@@ -200,6 +203,7 @@ export default function AccountScreen() {
             currency={currency}
             selectedCurrency={selectedCurrency}
             onCurrencyPress={() => setCurrModal(true)}
+            onThemePress={() => setThemeModalVisible(true)}
           />
         </ScrollView>
 
@@ -209,6 +213,13 @@ export default function AccountScreen() {
           onSelect={handleCurrencySelect}
           converting={converting}
           onClose={() => setCurrModal(false)}
+        />
+
+        <ThemeModal
+          visible={themeModalVisible}
+          themeMode={themeMode}
+          onSelect={setThemeMode}
+          onClose={() => setThemeModalVisible(false)}
         />
       </SafeAreaView>
     );
@@ -240,6 +251,7 @@ export default function AccountScreen() {
           currency={currency}
           selectedCurrency={selectedCurrency}
           onCurrencyPress={() => setCurrModal(true)}
+          onThemePress={() => setThemeModalVisible(true)}
         />
       </ScrollView>
 
@@ -249,6 +261,13 @@ export default function AccountScreen() {
         onSelect={handleCurrencySelect}
         converting={converting}
         onClose={() => setCurrModal(false)}
+      />
+
+      <ThemeModal
+        visible={themeModalVisible}
+        themeMode={themeMode}
+        onSelect={setThemeMode}
+        onClose={() => setThemeModalVisible(false)}
       />
     </SafeAreaView>
   );
@@ -284,16 +303,16 @@ function ProCard() {
 }
 
 function PreferencesSection({
-  currency, selectedCurrency, onCurrencyPress,
+  currency, selectedCurrency, onCurrencyPress, onThemePress,
 }: {
   currency: string;
   selectedCurrency: typeof CURRENCIES[0];
   onCurrencyPress: () => void;
+  onThemePress: () => void;
 }) {
   const colors       = useTheme();
   const s            = useMemo(() => makeStyles(colors), [colors]);
   const themeMode    = useStore(state => state.themeMode);
-  const setThemeMode = useStore(state => state.setThemeMode);
 
   return (
     <>
@@ -315,28 +334,20 @@ function PreferencesSection({
         </TouchableOpacity>
 
         {/* Theme row */}
-        <View style={s.settingRowBordered}>
+        <TouchableOpacity style={s.settingRowBordered} onPress={onThemePress} activeOpacity={0.7}>
           <View style={s.settingLeft}>
             <View style={s.iconBox}>
               <Text style={s.iconBoxText}>◐</Text>
             </View>
             <Text style={s.settingLabel}>Theme</Text>
           </View>
-          <View style={s.themeToggle}>
-            {(['light', 'system', 'dark'] as const).map(m => (
-              <TouchableOpacity
-                key={m}
-                style={[s.themeSegment, themeMode === m && s.themeSegmentActive]}
-                onPress={() => setThemeMode(m)}
-                activeOpacity={0.7}
-              >
-                <Text style={[s.themeSegmentText, themeMode === m && { color: colors.primaryFg }]}>
-                  {m === 'system' ? 'Auto' : m.charAt(0).toUpperCase() + m.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={s.settingRight}>
+            <Text style={s.settingValue}>
+              {themeMode === 'system' ? 'Auto' : themeMode.charAt(0).toUpperCase() + themeMode.slice(1)}
+            </Text>
+            <Text style={s.chevron}>›</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Support row */}
         <TouchableOpacity
@@ -382,7 +393,7 @@ function CurrencyModal({
   return (
     <Modal visible={visible} transparent animationType="slide">
       <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={converting ? undefined : onClose}>
-        <View style={s.currModal}>
+        <TouchableOpacity activeOpacity={1} style={s.currModal} onPress={undefined}>
           <View style={s.currHandle} />
           <Text style={s.currTitle}>Select Currency</Text>
           {converting ? (
@@ -391,36 +402,93 @@ function CurrencyModal({
               <Text style={s.convertingText}>Converting amounts…</Text>
             </View>
           ) : (
-            CURRENCIES.map(c => {
-              const active = c.code === currency;
-              return (
-                <TouchableOpacity
-                  key={c.code}
-                  style={s.currRow}
-                  onPress={() => onSelect(c.code)}
-                >
-                  <View style={s.currLeft}>
-                    <View style={[
-                      s.currSymbolBox,
-                      active && { backgroundColor: colors.primary + '18', borderColor: colors.primary },
-                    ]}>
-                      <Text style={[s.currSymbol, active && { color: colors.primary }]}>{c.symbol}</Text>
+            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+              {CURRENCIES.map(c => {
+                const active = c.code === currency;
+                return (
+                  <TouchableOpacity
+                    key={c.code}
+                    style={s.currRow}
+                    onPress={() => onSelect(c.code)}
+                  >
+                    <View style={s.currLeft}>
+                      <View style={[
+                        s.currSymbolBox,
+                        active && { backgroundColor: colors.primary + '18', borderColor: colors.primary },
+                      ]}>
+                        <Text style={[s.currSymbol, active && { color: colors.primary }]}>{c.symbol}</Text>
+                      </View>
+                      <View>
+                        <Text style={[s.currName, active && { color: colors.primary }]}>{c.name}</Text>
+                        <Text style={s.currCode}>{c.code}</Text>
+                      </View>
                     </View>
-                    <View>
-                      <Text style={[s.currName, active && { color: colors.primary }]}>{c.name}</Text>
-                      <Text style={s.currCode}>{c.code}</Text>
-                    </View>
-                  </View>
-                  {active
-                    ? <Text style={s.checkmark}>✓</Text>
-                    : !isPro && !isCurrencyFree(c.code)
-                      ? <Text style={s.lockBadge}>🔒 Pro</Text>
-                      : null}
-                </TouchableOpacity>
-              );
-            })
+                    {active
+                      ? <Text style={s.checkmark}>✓</Text>
+                      : !isPro && !isCurrencyFree(c.code)
+                        ? <Text style={s.lockBadge}>🔒 Pro</Text>
+                        : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           )}
-        </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
+function ThemeModal({
+  visible, themeMode, onSelect, onClose,
+}: {
+  visible: boolean;
+  themeMode: 'light' | 'system' | 'dark';
+  onSelect: (mode: 'light' | 'system' | 'dark') => void;
+  onClose: () => void;
+}) {
+  const colors = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+
+  const THEMES = [
+    { mode: 'light', name: 'Light Mode', icon: '☀️' },
+    { mode: 'dark', name: 'Dark Mode', icon: '🌙' },
+    { mode: 'system', name: 'System Default (Auto)', icon: '🌓' },
+  ] as const;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity activeOpacity={1} style={s.currModal} onPress={undefined}>
+          <View style={s.currHandle} />
+          <Text style={s.currTitle}>Select Theme</Text>
+          {THEMES.map(t => {
+            const active = t.mode === themeMode;
+            return (
+              <TouchableOpacity
+                key={t.mode}
+                style={s.currRow}
+                onPress={() => {
+                  onSelect(t.mode);
+                  onClose();
+                }}
+              >
+                <View style={s.currLeft}>
+                  <View style={[
+                    s.currSymbolBox,
+                    active && { backgroundColor: colors.primary + '18', borderColor: colors.primary },
+                  ]}>
+                    <Text style={[s.currSymbol, active && { color: colors.primary }]}>{t.icon}</Text>
+                  </View>
+                  <View>
+                    <Text style={[s.currName, active && { color: colors.primary }]}>{t.name}</Text>
+                  </View>
+                </View>
+                {active && <Text style={s.checkmark}>✓</Text>}
+              </TouchableOpacity>
+            );
+          })}
+        </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
   );
@@ -522,7 +590,7 @@ const makeStyles = (colors: Theme) => StyleSheet.create({
 
   // ── Currency modal ──
   overlay:      { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  currModal:    { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 44 },
+  currModal:    { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 44, maxHeight: '80%' },
   currHandle:   { width: 36, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   currTitle:    { fontSize: 17, fontWeight: '700', color: colors.text, marginBottom: 16 },
   currRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.secondary },

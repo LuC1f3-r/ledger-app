@@ -22,7 +22,7 @@
         "backgroundColor": "#443821"
       },
       "package": "com.niyaz.ledger",
-      "versionCode": 8,
+      "versionCode": 9,
       "googleServicesFile": "./google-services.json"
     },
     "updates": {
